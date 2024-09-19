@@ -3,10 +3,11 @@
 namespace AdityaZanjad\Http\Clients;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
-use AdityaZanjad\Http\Builders\GuzzleRequest;
+use GuzzleHttp\Exception\RequestException;
 use AdityaZanjad\Http\Interfaces\HttpClient;
-
+use AdityaZanjad\Http\Builders\GuzzleRequest;
 
 class Guzzle implements HttpClient
 {
@@ -14,11 +15,11 @@ class Guzzle implements HttpClient
      * @var \GuzzleHttp\Client $client
      */
     protected Client $client;
-    
+
     /**
-     * @var \GuzzleHttp\Psr7\Response $response
+     * @var \GuzzleHttp\Psr7\Response
      */
-    protected Response $response;
+    protected Response $res;
 
     /**
      * Inject necessary data into the class.
@@ -27,32 +28,54 @@ class Guzzle implements HttpClient
      */
     public function __construct(protected array $data)
     {
+        $this->data     =   (new GuzzleRequest($this->data))->build();
         $this->client   =   new Client();
-        $this->response =   $this->client->send((new GuzzleRequest($data))->build());
     }
 
     /**
      * @inheritDoc
      */
-    public function status(): int
+    public function send(): static
     {
-        return $this->response->getStatusCode();
+        try {
+            $this->res = $this->client->send(
+                new Request(
+                    $this->data['method'],
+                    $this->data['url'],
+                    $this->data['headers'],
+                    $this->data['body']
+                ),
+                $this->data['options']
+            );
+        } catch (RequestException $e) {
+            $this->res = $e->getResponse();
+        }
+
+        return $this;
     }
 
     /**
      * @inheritDoc
      */
-    public function phrase(): string
+    public function status(): string
     {
-        return $this->response->getReasonPhrase();
+        return $this->res->getReasonPhrase();
     }
 
     /**
      * @inheritDoc
      */
-    public function decode(): mixed
+    public function code(): int
     {
-        $body = (string) $this->response->getBody();
+        return $this->res->getStatusCode();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function body(): mixed
+    {
+        $body = (string) $this->res['response']->getBody();
 
         if (json_validate($body)) {
             return json_decode($body);
@@ -66,7 +89,7 @@ class Guzzle implements HttpClient
      */
     public function headers(): array
     {
-        return $this->response->getHeaders();
+        return $this->res->getHeaders();
     }
 
     /**
@@ -74,6 +97,6 @@ class Guzzle implements HttpClient
      */
     public function header(string $key): mixed
     {
-        return $this->response->getHeader($key);
+        return $this->res->getHeader($key);
     }
 }

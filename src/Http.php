@@ -2,28 +2,27 @@
 
 namespace AdityaZanjad\Http;
 
-use GuzzleHttp\Client;
-use AdityaZanjad\Http\Clients\Curl;
-use AdityaZanjad\Http\Clients\Guzzle;
-use AdityaZanjad\Http\Clients\Stream;
+use Exception;
+use AdityaZanjad\Http\Enums\Client;
 use AdityaZanjad\Http\Interfaces\HttpClient;
 
-/**
- * Make a HTTP request based on the given data & return its response.
- *
- * @param array<string, mixed> $data
- *
- * @return \AdityaZanjad\Http\Interfaces\HttpClient
- */
-function http(array $data): HttpClient
+class Http
 {
-    if (class_exists(Client::class)) {
-        return new Guzzle($data);
-    }
+    /**
+     * Send a new HTTP request.
+     *
+     * @param array<string, mixed> $data
+     * 
+     * @return \AdityaZanjad\Http\Interfaces\HttpClient
+     */
+    public static function send(array $data): HttpClient
+    {
+        $data['client'] = Client::tryFromName($data['client'] ?? 'stream');
 
-    if (extension_loaded('curl')) {
-        return new Curl($data);
-    }
+        if (is_null($data['client'])) {
+            throw new Exception("[Developer][Exception]: The HTTP client [{$data['client']}] is either invalid OR not supported.");
+        }
 
-    return new Stream($data);
+        return (new $data['client'])($data)->send();
+    }
 }

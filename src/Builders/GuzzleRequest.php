@@ -15,9 +15,11 @@ use GuzzleHttp\Psr7\MultipartStream;
 class GuzzleRequest
 {
     /**
-     * @var \GuzzleHttp\Psr7\Request
+     * The array structure as required by GuzzleHttp Client to make the request.
+     *
+     * @var array<string, mixed> $req
      */
-    protected Request $request;
+    protected array $req;
 
     /**
      * Inject necessary data into the class.
@@ -32,19 +34,32 @@ class GuzzleRequest
     /**
      * Build the HTTP request object.
      *
-     * @return \GuzzleHttp\Psr7\Request
+     * @return array<string, mixed>
      */
-    public function build(): Request
+    public function build(): array
     {
+        $this->setUrl();
+        $this->setMethod();
+        $this->setHeaders();
         $this->setQuery();
         $this->setBody();
 
-        return new Request(
-            $this->data['method'],
-            $this->data['url'],
-            $this->data['headers'],
-            $this->data['body']
-        );
+        return $this->req;
+    }
+
+    public function setUrl(): void
+    {
+        $this->req['url'] = $this->data['url'];
+    }
+
+    /**
+     * Set the HTTP request method.
+     *
+     * @return void
+     */
+    public function setMethod(): void
+    {
+        $this->req['method'] = $this->data['method'];
     }
 
     /**
@@ -58,7 +73,31 @@ class GuzzleRequest
             return;
         }
 
-        $this->data['url'] .= '?' . http_build_query($this->data['query']);
+        $this->req['options']['query'] = $this->data['query'];
+    }
+
+    /**
+     * Set headers for the HTTP request.
+     *
+     * @return void
+     */
+    public function setHeaders(): void
+    {
+        $this->req['options']['headers'] = $this->data['headers'] ?? [];
+    }
+
+    /**
+     * Set HTTP request timeout.
+     * 
+     * @return void
+     */
+    public function setTimeout(): void
+    {
+        if (!isset($this->data['timeout'])) {
+            return;
+        }
+
+        $this->req['options']['timeout'] = $this->data['timeout'];        
     }
 
     /**

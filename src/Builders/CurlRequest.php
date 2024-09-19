@@ -15,44 +15,37 @@ use CURLStringFile;
 class CurlRequest
 {
     /**
+     * To contain the HTTP request data as required in a particular format specific PHP CURL.
+     *
+     * @var array<string, mixed>
+     */
+    protected array $options = [];
+
+    /**
      * Inject necessary data into the class.
      *
-     * @param   \CurlHandle           $req
-     * @param   array<string, mixed>  $data
+     * @param array<string, mixed> $data
      */
-    public function __construct(protected CurlHandle $req, protected array $data)
+    public function __construct(protected array $data)
     {
-        $this->req = $req;
+        //
     }
 
     /**
      * Build the HTTP request object.
      *
-     * @return \CurlHandle
+     * @return array<string, mixed>
      */
-    public function build(): CurlHandle
+    public function build(): array
     {
         $this->setUrl();
         $this->setMethod();
         $this->setHeaders();
+        $this->setTimeout();
         $this->setBody();
         $this->setOtherOptions();
 
-        return $this->req;
-    }
-
-    /**
-     * Set HTTP request method.
-     *
-     * @return void
-     */
-    public function setMethod(): void
-    {
-        if ($this->data['method'] === 'HEAD') {
-            curl_setopt($this->req, CURLOPT_NOBODY, true);
-        }
-
-        curl_setopt($this->req, CURLOPT_CUSTOMREQUEST, $this->data['method']);
+        return $this->options;
     }
 
     /**
@@ -68,7 +61,22 @@ class CurlRequest
             $url = "{$this->data['url']}?" . http_build_query($this->data['query']);
         }
 
-        curl_setopt($this->req, CURLOPT_URL, $url);
+        $this->options[CURLOPT_URL] = $url;
+    }
+
+    /**
+     * Set HTTP request method.
+     *
+     * @return void
+     */
+    public function setMethod(): void
+    {
+        $method = match ($this->data['method']) {
+            'HEAD'  =>  [ CURLOPT_NOBODY => true ],
+            default =>  [ CURLOPT_CUSTOMREQUEST => $this->data['method'] ]
+        };
+
+        $this->options = array_merge($this->options, $method);
     }
 
     /**
@@ -88,8 +96,18 @@ class CurlRequest
             $headers[] = "{$header}:{$value}";
         }
 
-        curl_setopt($this->req, CURLOPT_HEADER, true);
-        curl_setopt($this->req, CURLOPT_HTTPHEADER, $headers);
+        $this->options[CURLOPT_HEADER]      =   true;
+        $this->options[CURLOPT_HTTPHEADER]  =   $headers;
+    }
+
+    /**
+     * Set the HTTP request timeout.
+     *
+     * @return void
+     */
+    public function setTimeout(): void
+    {
+        $this->options[CURLOPT_TIMEOUT] = $this->data['timeout'] ?? 120;
     }
 
     /**
@@ -99,31 +117,20 @@ class CurlRequest
      */
     public function setBody(): void
     {
-        switch ($this->data['headers']['Content-Type']) {
-            case 'application/json':
-                $this->makeJsonPayload();
-                break;
-
-            case 'application/x-www-form-urlencoded':
-                $this->makeUrlEncodedFormPayload();
-                break;
-
-            case 'multipart/form-data':
-                $this->makeMultipartFormPayload();
-                break;
-
-            default:
-                throw new Exception("[Developer][Exception]: The header 'Content-Type' is set to an invalid value.");
-                break;
-        }
+        $this->options[CURLOPT_POSTFIELDS] = match ($this->data['headers']['Content-Type']) {
+            'application/json'                  =>  $this->makeJsonPayload(),
+            'application/x-www-form-urlencoded' =>  $this->makeUrlEncodedFormPayload(),
+            'multipart/form-data'               =>  $this->makeMultipartFormPayload(),
+            default                             =>  throw new Exception("[Developer][Exception]: The header 'Content-Type' is set to an invalid value.")
+        };
     }
 
     /**
      * Make the 'application/json' request body as per the HTTP client's requirements.
      *
-     * @return void
+     * @return string
      */
-    protected function makeJsonPayload(): void
+    protected function makeJsonPayload(): string
     {
         $payload = [];
 
@@ -131,15 +138,15 @@ class CurlRequest
             $payload[$data['name']] = $data['value'];
         }
 
-        curl_setopt($this->req, CURLOPT_POSTFIELDS, json_encode($payload));
+        return json_encode($payload);
     }
 
     /**
      * Make the 'application/x-www-form-urlencoded' request body as per the HTTP client's requirements.
      *
-     * @return void
+     * @return string
      */
-    protected function makeUrlEncodedFormPayload(): void
+    protected function makeUrlEncodedFormPayload(): string
     {
         $payload = [];
 
@@ -147,15 +154,15 @@ class CurlRequest
             $payload[$data['name']] = $data['value'];
         }
 
-        curl_setopt($this->req, CURLOPT_POSTFIELDS, http_build_query($payload));
+        return http_build_query($payload);
     }
 
     /**
      * Make the 'multipart/form-data' request body as per the HTTP client's requirements.
      *
-     * @return void
+     * @return array<string, mixed>
      */
-    protected function makeMultipartFormPayload(): void
+    protected function makeMultipartFormPayload(): array
     {
         $payload = [];
 
@@ -176,7 +183,7 @@ class CurlRequest
             $payload[$data['name']] = $data['value'];
         }
 
-        curl_setopt($this->req, CURLOPT_POSTFIELDS, $payload);
+        return $payload;
     }
 
     /**
@@ -186,9 +193,30 @@ class CurlRequest
      */
     protected function setOtherOptions(): void
     {
-        curl_setopt($this->req, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($this->req, CURLOPT_TIMEOUT, $this->data['timeout'] ?? 60);
-        curl_setopt($this->req, CURLOPT_HTTP_VERSION, $this->data['version'] ?? CURL_HTTP_VERSION_1_1);
-        curl_setopt($this->req, CURLOPT_MAXREDIRS, $this->data['redirects']['max'] ?? 10);
+        $this->options[CURLOPT_RETURNTRANSFER]  =   true;
+        $this->options[CURLOPT_HTTP_VERSION]    =   $this->data['version'] ?? CURL_HTTP_VERSION_1_1;
+        $this->options[CURLOPT_MAXREDIRS]       =   $this->data['max_redirects'] ?? 5;
+    }
+
+    /**
+     * This code is taken from these 'StackOverflow' answers linked below. I have no idea what it does exactly.
+     *
+     * @link    https://stackoverflow.com/questions/9183178/can-php-curl-retrieve-response-headers-and-body-in-a-single-request#answer-41135574
+     * @link    https://stackoverflow.com/questions/9183178/can-php-curl-retrieve-response-headers-and-body-in-a-single-request#answer-25118032
+     */
+    public function setHeaderCallback(CurlHandle $req, string $headerLine)
+    {
+        $header         =   explode(':', $headerLine, 2);
+        $headerLength   =   strlen($headerLine);
+
+        if (count($header) < 2) {
+            return $headerLength;
+        }
+
+        $header[0] = strtolower(trim($header[0]));
+        $header[1] = trim($header[1]);
+
+        $headers[$header[0]] = $header[1];
+        return $headerLength;
     }
 }
