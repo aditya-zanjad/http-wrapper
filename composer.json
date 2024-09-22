@@ -3,10 +3,12 @@
     "type": "library",
     "license": "MIT",
     "minimum-stability": "dev",
-    "require": {
-        "guzzlehttp/guzzle": "8.0.x-dev"
-    },
     "require-dev": {
         "phpunit/phpunit": "^11"
+    },
+    "autoload": {
+        "psr-4": {
+            "AdityaZanjad\\Http\\": "src/"
+        }
     }
 }

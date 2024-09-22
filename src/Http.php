@@ -23,6 +23,6 @@ class Http
             throw new Exception("[Developer][Exception]: The HTTP client [{$data['client']}] is either invalid OR not supported.");
         }
 
-        return (new $data['client'])($data)->send();
+        return (new $data['client']($data))->send();
     }
 }

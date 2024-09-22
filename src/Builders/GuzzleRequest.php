@@ -103,15 +103,15 @@ class GuzzleRequest
     /**
      * Set the HTTP request body as per the provider's requirements.
      *
-     * @return never
+     * @return void
      */
-    public function setBody(): never
+    public function setBody(): void
     {
-        $this->data['body'] = match ($this->data['headers']['Content-Type']) {
+        $this->data['body'] = match ($this->data['headers']['Content-Type'] ?? '') {
             'application/json'                  =>  $this->makeJsonPayload(),
             'application/x-www-form-urlencoded' =>  $this->makeUrlEncodedFormPayload(),
             'multipart/form-data'               =>  $this->makeMultipartFormPayload(),
-            default                             =>  throw new Exception("[Developer][Exception]: The header 'Content-Type' is set to an invalid value.")
+            default                             =>  []
         };
     }
 

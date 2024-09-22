@@ -28,6 +28,6 @@ enum Client: string
             return null;
         }
 
-        return constant("self::{$name}");
+        return constant("self::{$name}")->value;
     }
 }

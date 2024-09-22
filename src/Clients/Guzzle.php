@@ -2,6 +2,7 @@
 
 namespace AdityaZanjad\Http\Clients;
 
+use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
@@ -28,6 +29,10 @@ class Guzzle implements HttpClient
      */
     public function __construct(protected array $data)
     {
+        if (!class_exists(Client::class)) {
+            throw new Exception("[Developer][Exception]: The library [guzzlehttp/guzzle] is required for the driver [{$data['client']}] to work.");
+        }
+
         $this->data     =   (new GuzzleRequest($this->data))->build();
         $this->client   =   new Client();
     }
@@ -42,8 +47,8 @@ class Guzzle implements HttpClient
                 new Request(
                     $this->data['method'],
                     $this->data['url'],
-                    $this->data['headers'],
-                    $this->data['body']
+                    $this->data['headers'] ?? [],
+                    $this->data['body'] ?? ''
                 ),
                 $this->data['options']
             );
@@ -75,7 +80,7 @@ class Guzzle implements HttpClient
      */
     public function body(): mixed
     {
-        $body = (string) $this->res['response']->getBody();
+        $body = (string) $this->res->getBody();
 
         if (json_validate($body)) {
             return json_decode($body);
@@ -97,6 +102,12 @@ class Guzzle implements HttpClient
      */
     public function header(string $key): mixed
     {
-        return $this->res->getHeader($key);
+        $header = $this->res->getHeader($key);
+
+        if (empty($header)) {
+            return null;
+        }
+
+        return $header[0];
     }
 }

@@ -14,9 +14,9 @@ interface HttpClient
     /**
      * Get the HTTP response reason phrase.
      *
-     * @return string
+     * @return null|string
      */
-    public function status(): string;
+    public function status(): null|string;
 
     /**
      * Get the HTTP status code of the response.

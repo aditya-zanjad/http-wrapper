@@ -3,7 +3,6 @@
 namespace AdityaZanjad\Http\Builders;
 
 use Exception;
-use CurlHandle;
 use CURLStringFile;
 
 /**
@@ -44,6 +43,7 @@ class CurlRequest
         $this->setTimeout();
         $this->setBody();
         $this->setOtherOptions();
+        $this->setSslVerifyOptions();
 
         return $this->options;
     }
@@ -58,10 +58,10 @@ class CurlRequest
         $this->data['url'] = rtrim($this->data['url'], '?');
 
         if (isset($this->data['query'])) {
-            $url = "{$this->data['url']}?" . http_build_query($this->data['query']);
+            $this->data['url'] .= '?' . http_build_query($this->data['query']);
         }
 
-        $this->options[CURLOPT_URL] = $url;
+        $this->options[CURLOPT_URL] = trim($this->data['url']);
     }
 
     /**
@@ -71,12 +71,12 @@ class CurlRequest
      */
     public function setMethod(): void
     {
-        $method = match ($this->data['method']) {
-            'HEAD'  =>  [ CURLOPT_NOBODY => true ],
-            default =>  [ CURLOPT_CUSTOMREQUEST => $this->data['method'] ]
-        };
+        if ($this->data['method'] === 'HEAD') {
+            $this->options[CURLOPT_NOBODY] = true;
+            return;
+        }
 
-        $this->options = array_merge($this->options, $method);
+        $this->options[CURLOPT_CUSTOMREQUEST] = $this->data['method'];
     }
 
     /**
@@ -101,6 +101,19 @@ class CurlRequest
     }
 
     /**
+     * Set the SSL verifier to either true OR false.
+     *
+     * @return void
+     */
+    public function setSslVerifyOptions(): void
+    {
+        $this->data['ssl'] ??= true;
+
+        $this->options[CURLOPT_SSL_VERIFYHOST]  =   $this->data['ssl'];
+        $this->options[CURLOPT_SSL_VERIFYPEER]  =   $this->data['ssl'];
+    }
+
+    /**
      * Set the HTTP request timeout.
      *
      * @return void
@@ -117,6 +130,10 @@ class CurlRequest
      */
     public function setBody(): void
     {
+        if (!isset($this->data['headers']['Content-Type'])) {
+            return;
+        }
+
         $this->options[CURLOPT_POSTFIELDS] = match ($this->data['headers']['Content-Type']) {
             'application/json'                  =>  $this->makeJsonPayload(),
             'application/x-www-form-urlencoded' =>  $this->makeUrlEncodedFormPayload(),
@@ -196,27 +213,5 @@ class CurlRequest
         $this->options[CURLOPT_RETURNTRANSFER]  =   true;
         $this->options[CURLOPT_HTTP_VERSION]    =   $this->data['version'] ?? CURL_HTTP_VERSION_1_1;
         $this->options[CURLOPT_MAXREDIRS]       =   $this->data['max_redirects'] ?? 5;
-    }
-
-    /**
-     * This code is taken from these 'StackOverflow' answers linked below. I have no idea what it does exactly.
-     *
-     * @link    https://stackoverflow.com/questions/9183178/can-php-curl-retrieve-response-headers-and-body-in-a-single-request#answer-41135574
-     * @link    https://stackoverflow.com/questions/9183178/can-php-curl-retrieve-response-headers-and-body-in-a-single-request#answer-25118032
-     */
-    public function setHeaderCallback(CurlHandle $req, string $headerLine)
-    {
-        $header         =   explode(':', $headerLine, 2);
-        $headerLength   =   strlen($headerLine);
-
-        if (count($header) < 2) {
-            return $headerLength;
-        }
-
-        $header[0] = strtolower(trim($header[0]));
-        $header[1] = trim($header[1]);
-
-        $headers[$header[0]] = $header[1];
-        return $headerLength;
     }
 }

@@ -2,8 +2,10 @@
 
 namespace AdityaZanjad\Http\Clients;
 
+use Exception;
 use CurlHandle;
 use AdityaZanjad\Http\Builders\CurlRequest;
+use AdityaZanjad\Http\Enums\ReasonPhrase;
 use AdityaZanjad\Http\Interfaces\HttpClient;
 
 
@@ -18,10 +20,11 @@ class Curl implements HttpClient
      * @var array<string, mixed> $res
      */
     protected array $res = [
-        'code'      =>  0,
-        'status'    =>  '',
-        'headers'   =>  [],
-        'body'      =>  []
+        'code'              =>  0,      // HTTP status code
+        'status'            =>  '',     // HTTP reason phrase
+        'headers'           =>  [],
+        'body'              =>  [],
+        'is_body_decoded'   =>  false, // Indicates whether the response body is decoded OR not.
     ];
 
     /**
@@ -31,8 +34,12 @@ class Curl implements HttpClient
      */
     public function __construct(protected array $data)
     {
-        $this->data     =   (new CurlRequest($this->data))->build();
-        $this->client   =   curl_init();
+        if (!extension_loaded('curl')) {
+            throw new Exception("[Developer][Exception]: The PHP extension [ext-php] is required to make HTTP requests using [PHP CURL].");
+        }
+
+        $this->data                         =   (new CurlRequest($this->data))->build();
+        $this->data[CURLOPT_HEADERFUNCTION] =   [$this, 'setHeaderFunction'];
     }
 
     /**
@@ -40,33 +47,17 @@ class Curl implements HttpClient
      */
     public function send(): static
     {
-        $this->data[CURLOPT_HEADERFUNCTION] = [$this, 'setHeaderFunction'];
+        $this->client = curl_init();
         curl_setopt_array($this->client, $this->data);
         $this->res['body'] = curl_exec($this->client);
         curl_close($this->client);
-        $this->extractResponseData();
+        
+        // Set HTTP status code & reason phrase.
+        $this->res['code']      =   curl_getinfo($this->client, CURLINFO_HTTP_CODE);
+        $this->res['status']    =   ReasonPhrase::tryFrom($this->res['code'])?->name;
+        $this->res['status']    =   str_replace('_', ' ', $this->res['status']);
 
         return $this;
-    }
-
-    /**
-     * Decode and simplify the received HTTP response.
-     *
-     * @return void
-     */
-    protected function extractResponseData(): void
-    {
-        /**
-         * This code focuses on extracting the body of the HTTP response.
-         * This code is taken from the link below.
-         * 
-         * @link https://gist.github.com/christeredvartsen/6620626
-         */
-        $matches = [];
-        preg_match('#^HTTP/1.(?:0|1) [\d]{3} (.*)$#m', $this->res['body'], $matches);
-        
-        $this->res['status']    =   $matches[1];
-        $this->res['code']      =   curl_getinfo($this->client, CURLINFO_HTTP_CODE);
     }
 
     /**
@@ -99,7 +90,7 @@ class Curl implements HttpClient
     /**
      * @inheritDoc
      */
-    public function status(): string
+    public function status(): null|string
     {
         return $this->res['status'];
     }
@@ -109,7 +100,7 @@ class Curl implements HttpClient
      */
     public function code(): int
     {
-        return curl_getinfo($this->client, CURLINFO_HTTP_CODE);
+        return $this->res['code'];
     }
 
     /**
@@ -117,9 +108,11 @@ class Curl implements HttpClient
      */
     public function body(): mixed
     {
-        if (!empty($this->res['body'])) {
+        if (!empty($this->res['body']) || $this->res['is_body_decoded']) {
             return $this->res['body'];
         }
+
+        $this->res['is_body_decoded'] = true;
 
         if (json_validate($this->res['body'])) {
             $this->res['body'] = json_decode($this->res['body']);
