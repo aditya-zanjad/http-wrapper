@@ -4,10 +4,9 @@ namespace AdityaZanjad\Http\Clients;
 
 use Exception;
 use CurlHandle;
-use AdityaZanjad\Http\Builders\CurlRequest;
 use AdityaZanjad\Http\Enums\ReasonPhrase;
+use AdityaZanjad\Http\Builders\CurlRequest;
 use AdityaZanjad\Http\Interfaces\HttpClient;
-
 
 class Curl implements HttpClient
 {
@@ -24,7 +23,7 @@ class Curl implements HttpClient
         'status'            =>  '',     // HTTP reason phrase
         'headers'           =>  [],
         'body'              =>  [],
-        'is_body_decoded'   =>  false, // Indicates whether the response body is decoded OR not.
+        'is_body_decoded'   =>  false,  // Indicates whether the response body is decoded OR not.
     ];
 
     /**
@@ -51,7 +50,7 @@ class Curl implements HttpClient
         curl_setopt_array($this->client, $this->data);
         $this->res['body'] = curl_exec($this->client);
         curl_close($this->client);
-        
+
         // Set HTTP status code & reason phrase.
         $this->res['code']      =   curl_getinfo($this->client, CURLINFO_HTTP_CODE);
         $this->res['status']    =   ReasonPhrase::tryFrom($this->res['code'])?->name;
@@ -62,13 +61,13 @@ class Curl implements HttpClient
 
     /**
      * Send the HTTP request & obtain its response.
-     * 
+     *
      * @link    https://stackoverflow.com/questions/9183178/can-php-curl-retrieve-response-headers-and-body-in-a-single-request#answer-41135574
      * @link    https://stackoverflow.com/questions/9183178/can-php-curl-retrieve-response-headers-and-body-in-a-single-request#answer-25118032
      *
      * @param   \CurlHandle $client
      * @param   string      $headerLine
-     * 
+     *
      * @return  void
      */
     protected function setHeaderFunction(CurlHandle $client, string $headerLine): int
@@ -108,15 +107,15 @@ class Curl implements HttpClient
      */
     public function body(): mixed
     {
-        if (!empty($this->res['body']) || $this->res['is_body_decoded']) {
+        if ($this->res['is_body_decoded']) {
             return $this->res['body'];
         }
-
-        $this->res['is_body_decoded'] = true;
 
         if (json_validate($this->res['body'])) {
             $this->res['body'] = json_decode($this->res['body']);
         }
+
+        $this->res['is_body_decoded'] = true;
 
         return $this->res['body'];
     }
