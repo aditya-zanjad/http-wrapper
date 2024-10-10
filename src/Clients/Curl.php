@@ -49,6 +49,7 @@ class Curl implements HttpClient
         $this->client = curl_init();
         curl_setopt_array($this->client, $this->data);
         $this->res['body'] = curl_exec($this->client);
+        $this->res['body'] = substr($this->res['body'], curl_getinfo($this->client, CURLINFO_HEADER_SIZE));
         curl_close($this->client);
 
         // Set HTTP status code & reason phrase.
@@ -116,7 +117,6 @@ class Curl implements HttpClient
         }
 
         $this->res['is_body_decoded'] = true;
-
         return $this->res['body'];
     }
 

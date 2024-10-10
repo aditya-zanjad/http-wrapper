@@ -2,8 +2,6 @@
 
 namespace AdityaZanjad\Http\Builders;
 
-use Exception;
-use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\MultipartStream;
 
 /**
@@ -88,7 +86,7 @@ class GuzzleRequest
 
     /**
      * Set HTTP request timeout.
-     * 
+     *
      * @return void
      */
     public function setTimeout(): void
@@ -97,7 +95,7 @@ class GuzzleRequest
             return;
         }
 
-        $this->req['options']['timeout'] = $this->data['timeout'];        
+        $this->req['options']['timeout'] = $this->data['timeout'];
     }
 
     /**
@@ -165,11 +163,18 @@ class GuzzleRequest
 
             $payload[] = [
                 'name'      =>  $data['name'],
-                'contents'  =>  $data['value']
+                'contents'  =>  $data['value'],
+                'headers'   =>  ['Content-Type' => 'text/plain']
             ];
         }
 
+        /**
+         * If we do not unset the header 'Content-Type' when it's value is 'multipart/form-data', Guzzle will
+         * not automatically add the so-called boundary between the form input data. Therefore, removing
+         * it is necessary.
+         */
         unset($this->data['headers']['Content-Type']);
+
         return new MultipartStream($this->data['body']);
     }
 }

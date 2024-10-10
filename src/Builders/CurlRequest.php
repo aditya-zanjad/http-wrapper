@@ -107,7 +107,7 @@ class CurlRequest
      */
     public function setSslVerifyOptions(): void
     {
-        $this->data['ssl'] ??= true;
+        $this->data['ssl'] ??= 2;
 
         $this->options[CURLOPT_SSL_VERIFYHOST]  =   $this->data['ssl'];
         $this->options[CURLOPT_SSL_VERIFYPEER]  =   $this->data['ssl'];
