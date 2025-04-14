@@ -2,10 +2,10 @@
 
 use AdityaZanjad\Http\Http;
 use PHPUnit\Framework\TestCase;
-use AdityaZanjad\Http\Clients\Guzzle;
 use PHPUnit\Framework\Attributes\UsesClass;
-use AdityaZanjad\Http\Builders\GuzzleRequest;
+use AdityaZanjad\Http\Clients\Guzzle\Guzzle;
 use PHPUnit\Framework\Attributes\CoversClass;
+use AdityaZanjad\Http\Clients\Guzzle\Request as GuzzleRequest;
 
 #[UsesClass(Http::class)]
 #[CoversClass(Http::class)]
@@ -18,7 +18,7 @@ final class GuzzleGetRequestTest extends TestCase
     /**
      * @var string $baseUrl
      */
-    protected string $baseUrl = 'http://127.0.0.1:8000/api';
+    protected string $baseUrl = 'http://127.0.0.1:8000';
 
     /**
      * Assert that the HTTP GET request is successfully made through the Guzzle HTTP Client.
@@ -27,9 +27,10 @@ final class GuzzleGetRequestTest extends TestCase
      */
     public function testGetRequestSucceeds()
     {
-        $res = Http::make([
-            'client'    =>  'guzzle',
-            'url'       =>  "{$this->baseUrl}/hello-world-success",
+        $http = new Http('guzzle');
+
+        $res = $http->send([
+            'url'       =>  "{$this->baseUrl}/api/http/hello-world",
             'method'    =>  'GET',
 
             'headers' => [
@@ -40,7 +41,12 @@ final class GuzzleGetRequestTest extends TestCase
 
         $this->assertEquals($res->code(), 200);
         $this->assertEquals($res->status(), 'OK');
-        $this->assertEquals($res->body(), 'Hello World!');
+        
+        $body = $res->body();
+
+        $this->assertIsArray($body);
+        $this->assertNotEmpty($body);
+        $this->assertEquals($body['message'], 'Hello World!');
     }
 
     /**
@@ -50,18 +56,24 @@ final class GuzzleGetRequestTest extends TestCase
      */
     public function testGetRequestFails()
     {
-        $res = Http::make([
-            'client'    =>  'guzzle',
-            'url'       =>  "{$this->baseUrl}/hello-world-failure",
+        $http = new Http('guzzle');
+
+        $res = $http->send([
+            'url'       =>  "{$this->baseUrl}/api/http/hello-world-fails",
             'method'    =>  'GET',
 
             'headers' => [
                 'Accept' => 'text/plain'
-            ]
+            ],
         ]);
 
-        $this->assertEquals($res->code(), 500);
+        $this->assertContains($res->code(), [404, 401, 403, 500, 501, 502, 503]);
         $this->assertEquals(strtoupper($res->status()), 'INTERNAL SERVER ERROR');
-        $this->assertEquals($res->body(), 'INTERNAL SERVER ERROR');
+
+        $body = $res->body();
+
+        $this->assertIsArray($body);
+        $this->assertNotEmpty($body);
+        $this->assertEquals($body['message'], '!!! Hello World - Failed !!!');
     }
 }

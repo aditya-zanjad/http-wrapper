@@ -1,31 +1,53 @@
 <?php
 
+declare (strict_types=1);
+
 namespace AdityaZanjad\Http;
 
-use Exception;
-use AdityaZanjad\Http\Enums\Client;
-use AdityaZanjad\Http\Interfaces\HttpClient;
+use AdityaZanjad\Http\Enums\Provider;
+use AdityaZanjad\Http\Interfaces\HttpProvider;
+use AdityaZanjad\Http\Interfaces\HttpResponse;
 
+/**
+ * @version 2.0
+ */
 class Http
 {
     /**
-     * Send a new HTTP request based on the given array data.
-     *
-     * @param array<string, mixed> $request => The request data containing all the necessary fields required to make the HTTP request.
-     *
-     * @return \AdityaZanjad\Http\Interfaces\HttpClient
+     * @var \AdityaZanjad\Http\Interfaces\HttpClient $provider
      */
-    public static function make(array $request): HttpClient
+    protected HttpProvider $provider;
+
+    /**
+     * @param string $provider
+     */
+    public function __construct(string $provider = 'auto')
     {
-        // Get the name of the client & its associated class to make the HTTP request.
-        $client         =   $request['client'] ?? 'stream';
-        $clientClass    =   Client::tryFromName($client);
+        $provider       =   Provider::valueOf($provider);
+        $this->provider =   new $provider();
+    }
 
-        if (is_null($client)) {
-            throw new Exception("[Developer][Exception]: The HTTP client [{$client}] is either invalid OR not supported.");
-        }
+    /**
+     * Send a single HTTP request & obtain its response.
+     *
+     * @param array<string, mixed> $data
+     *
+     * @return \AdityaZanjad\Http\Interfaces\HttpResponse
+     */
+    public function send(array $data): HttpResponse
+    {
+        return $this->provider->send($data);
+    }
 
-        // Instantiate the HTTP client class & make a new HTTP request.
-        return (new $clientClass($request))->send();
+    /**
+     * Send concurrent bulk HTTP requests & obtain their responses.
+     *
+     * @param array<int|string, mixed> $data
+     *
+     * @return array<int|string, \AdityaZanjad\Http\Interfaces\HttpResponse>
+     */
+    public function pool(array $data): array
+    {
+        return $this->provider->pool($data);
     }
 }
