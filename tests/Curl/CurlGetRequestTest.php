@@ -27,7 +27,7 @@ final class CurlGetRequestTest extends TestCase
      */
     public function testGetRequestSucceeds()
     {
-        $http = new Http();
+        $http = new Http('curl');
 
         $res = $http->send([
             'client'    =>  'curl',
@@ -56,7 +56,7 @@ final class CurlGetRequestTest extends TestCase
      */
     public function testGetRequestFails()
     {
-        $http = new Http();
+        $http = new Http('curl');
 
         $res = $http->send([
             'client'    =>  'curl',

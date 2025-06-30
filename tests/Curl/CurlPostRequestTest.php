@@ -2,18 +2,18 @@
 
 use AdityaZanjad\Http\Http;
 use PHPUnit\Framework\TestCase;
+use AdityaZanjad\Http\Clients\Curl\Curl;
 use PHPUnit\Framework\Attributes\UsesClass;
-use AdityaZanjad\Http\Clients\Guzzle\Guzzle;
 use PHPUnit\Framework\Attributes\CoversClass;
-use AdityaZanjad\Http\Clients\Guzzle\Request as GuzzleRequest;
+use AdityaZanjad\Http\Clients\Curl\Request as CurlRequest;
 
 #[UsesClass(Http::class)]
 #[CoversClass(Http::class)]
-#[UsesClass(Guzzle::class)]
-#[CoversClass(Guzzle::class)]
-#[UsesClass(GuzzleRequest::class)]
-#[CoversClass(GuzzleRequest::class)]
-final class GuzzleGetRequestTest extends TestCase
+#[UsesClass(Curl::class)]
+#[CoversClass(Curl::class)]
+#[UsesClass(CurlRequest::class)]
+#[CoversClass(CurlRequest::class)]
+final class CurlPostRequestTest extends TestCase
 {
     /**
      * @var string $baseUrl
@@ -25,22 +25,28 @@ final class GuzzleGetRequestTest extends TestCase
      * 
      * @return void
      */
-    public function testGetRequestSucceeds()
+    public function testPostRequestSucceeds()
     {
-        $http = new Http('guzzle');
+        $http = new Http('curl');
 
         $res = $http->send([
-            'url'       =>  "{$this->baseUrl}/api/http/hello-world",
-            'method'    =>  'GET',
+            'client'    =>  'curl',
+            'url'       =>  "{$this->baseUrl}/api/http/post",
+            'method'    =>  'POST',
 
             'headers' => [
-                'Accept' => 'text/plain'
+                'Accept'        =>  'application/json',
+                'Content-Type'  =>  'application/json'
+            ],
+
+            'body' => [
+                'text' => '!!! Hello World !!!'
             ]
         ]);
 
         $this->assertEquals($res->code(), 200);
         $this->assertEquals($res->status(), 'OK');
-        
+
         $body = $res->body();
 
         $this->assertIsArray($body);
@@ -53,22 +59,28 @@ final class GuzzleGetRequestTest extends TestCase
      *
      * @return void
      */
-    public function testGetRequestFails()
+    public function testPostRequestFails()
     {
-        $http = new Http('guzzle');
+        $http = new Http('curl');
 
         $res = $http->send([
-            'url'       =>  "{$this->baseUrl}/api/http/hello-world-fails",
-            'method'    =>  'GET',
+            'client'    =>  'curl',
+            'url'       =>  "{$this->baseUrl}/api/http/post",
+            'method'    =>  'POST',
 
             'headers' => [
-                'Accept' => 'text/plain'
+                'Accept'        =>  'application/json',
+                'Content-Type'  =>  'application/json'
             ],
+
+            'body' => [
+                'text' => '!!! Hello World !!!'
+            ]
         ]);
 
         $this->assertContains($res->code(), [404, 401, 403, 500, 501, 502, 503]);
         $this->assertEquals(strtoupper($res->status()), 'INTERNAL SERVER ERROR');
-
+        
         $body = $res->body();
 
         $this->assertIsArray($body);

@@ -13,7 +13,7 @@ use AdityaZanjad\Http\Clients\Guzzle\Request as GuzzleRequest;
 #[CoversClass(Guzzle::class)]
 #[UsesClass(GuzzleRequest::class)]
 #[CoversClass(GuzzleRequest::class)]
-final class GuzzleGetRequestTest extends TestCase
+final class GuzzlePostRequestTest extends TestCase
 {
     /**
      * @var string $baseUrl
@@ -25,7 +25,7 @@ final class GuzzleGetRequestTest extends TestCase
      * 
      * @return void
      */
-    public function testGetRequestSucceeds()
+    public function testPostRequestSucceeds()
     {
         $http = new Http('guzzle');
 
@@ -53,7 +53,7 @@ final class GuzzleGetRequestTest extends TestCase
      *
      * @return void
      */
-    public function testGetRequestFails()
+    public function testPostRequestFails()
     {
         $http = new Http('guzzle');
 
