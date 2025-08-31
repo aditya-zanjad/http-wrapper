@@ -17,17 +17,15 @@ class Curl implements HttpClient
      */
     public function send(array $data): HttpResponse
     {
-        // Gather everything required to make the HTTP request.
+        // Prepare everything required for making a HTTP request.
         $curlRequest                        =   new Request($data);
         $request                            =   $curlRequest->build();
         $curl                               =   curl_init();
         $headers                            =   new ResponseHeaders();
         $request[CURLOPT_HEADERFUNCTION]    =   [$headers, 'process'];
 
-        // Set all the necessary HTTP request options required to send the HTTP request.
-        curl_setopt_array($curl, $request);
-
         // Set the HTTP request, obtain its response & then, close the connection.
+        curl_setopt_array($curl, $request);
         $response = curl_exec($curl);
         curl_close($curl);
 

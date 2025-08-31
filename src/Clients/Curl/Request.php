@@ -171,8 +171,8 @@ class Request implements HttpRequest
                 break;
 
             default:
-                if (is_string($this->data['body']['data']) && file_exists($this->data['body']['data'])) {
-                    $body[CURLOPT_POSTFIELDS] = $this->makeOtherMultipartContents([
+                if (\is_string($this->data['body']) || \is_resource($this->data['body'])) {
+                    $body[CURLOPT_POSTFIELDS] = $this->makeMultipartDataFromStringOrResource([
                         'field' => $this->data['body']['field'],
                         'value' => $this->data['body']['data'],
                     ]);
@@ -242,16 +242,47 @@ class Request implements HttpRequest
         $payload = [];
 
         foreach ($this->data['body']['data'] as $data) {
-            if (\is_array($data['value'])) {
-                $payload[$data['field']] = \json_encode($data, $data['json']['depth'] ?? 512);
-                continue;
-            }
-
-            $payload[$data['field']] = $this->makeOtherMultipartContents($data);
+            $payload[$data['field']] = match (\gettype($data['value'])) {
+                'string', 'resource'    =>  $this->makeMultipartDataFromStringOrResource($data),
+                'array'                 =>  $this->makeMultipartFormDataFromArray($data),
+                'object'                =>  \fopen($data['value']->getPathname(), 'r'),
+                default                 =>  $data['value']
+            };
         }
 
         return $payload;
     }
+
+    protected function makeMultipartDataFromStringOrResource(array $givenData): mixed
+    {
+        if (\is_resource($givenData['value'])) {
+            return $givenData['value'];
+        }
+
+        if (!\is_file($givenData['value'])) {
+            return $givenData['value'];
+        }
+
+        $mime = \extension_loaded('SPL') 
+            ? finfo_file(finfo_open(FILEINFO_MIME_TYPE), $givenData['value'])
+            : \mime_content_type($givenData['value']);
+
+        return new CURLFile($givenData['value'], $mime, $givenData['name'] ?? null);
+    }
+
+    protected function makeMultipartFormDataFromArray(array $givenData): mixed
+    {
+        if (isset($givenData['value']['error']) && $givenData['value']['error'] === UPLOAD_ERR_OK && isset($givenData['value']['tmp_name']) && is_uploaded_file($givenData['value']['tmp_name'])) {
+            return $this->makeMultipartDataFromStringOrResource([
+                'field' =>  $givenData['field'],
+                'value' =>  $givenData['value'],
+                'name'  =>  $givenData['name'] ?? null
+            ]);
+        }
+
+        return \json_encode($givenData['value'], $data['json']['depth'] ?? 512);
+    }
+
 
     /**
      * Set other necessary options for making a HTTP request.
@@ -266,56 +297,5 @@ class Request implements HttpRequest
             CURLOPT_RETURNTRANSFER  =>  true,
             CURLOPT_FOLLOWLOCATION  =>  true,
         ];
-    }
-
-    /**
-     * Make the file data required when making the 'multipart/form-data' HTTP requests.
-     *
-     * @param   array<string, string|mixed> $data
-     *
-     * @throws  \Exception
-     *
-     * @return  \CURLFile|\CURLStringFile
-     */
-    protected function makeOtherMultipartContents(array $data)
-    {
-        $file = null;
-
-        // If value of the given input field is a path to a file, open it & obtain its contents.
-        if (\is_string($data['value']) && \file_exists($data['value'])) {
-            try {
-                $file = \fopen($data['value'], 'r');
-            } catch (Throwable $e) {
-                // dd($e);
-                throw new Exception("[Developer][Exception]: Failed to open the file located at the path [{$data['value']}]. [Error: {$e->getMessage()}]");
-            }
-        }
-
-        if ($file === false) {
-            throw new Exception("[Developer][Exception]: Failed to open the file [{$data['value']}] due to unknown reasons.");
-        }
-
-        // If it is not a file at all but normal data like integer, float, boolean etc.
-        if (\is_null($file)) {
-            return [
-                'name'      =>  $data['field'],
-                'contents'  =>  $file
-            ];
-        }
-
-        // If unable to open the file.
-        if ($file === false) {
-            throw new Exception("[Developer][Exception]: The HTTP Wrapper could not open the file for upload located at [{$data['value']}]");
-        }
-
-        $metadata   =   \stream_get_meta_data($data['value']);
-        $filename   =   isset($data['name']) ? $data['name'] : \basename($metadata['uri']);
-
-        // For PHP versions 8.1 & up.
-        if (\class_exists(CURLStringFile::class)) {
-            return new CURLStringFile($file['value'], $filename, \mime_content_type($file['value']));
-        }
-
-        return new CURLFile($metadata['uri'], \mime_content_type($file['value']), $filename);
     }
 }

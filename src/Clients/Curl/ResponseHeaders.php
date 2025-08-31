@@ -47,8 +47,8 @@ class ResponseHeaders
      */
     public function all(): array
     {
-        if (empty($this->headers)) {
-            throw new Exception("[Developer][Exception]: The HTTP response headers must be processed first.");
+        if (!isset($this->headers)) {
+            throw new Exception("[Developer][Exception]: In order to be able to access the HTTP response headers, they must be processed with the [CURLOPT_HEADERFUNCTION] first.");
         }
 
         return $this->headers;

@@ -1,6 +1,6 @@
 <?php
 
-declare (strict_types=1);
+declare(strict_types=1);
 
 namespace AdityaZanjad\Http\Clients\Guzzle;
 
@@ -91,8 +91,8 @@ class Request implements HttpRequest
         }
 
         $contentType = arr_first_fn(
-            $this->data['headers'], 
-            fn ($value, $name) => strtolower($name) === 'content-type'
+            $this->data['headers'],
+            fn($value, $name) => strtolower($name) === 'content-type'
         );
 
         if (is_null($contentType)) {
@@ -177,61 +177,102 @@ class Request implements HttpRequest
          * to manually provide this header, we'll need to remove this code & then,
          * manually provide the multipart content boundary in the same
          * header as well.
+         * 
+         * !!! Important Note !!!
          */
         $this->data['headers'] = array_filter(
-            $this->data['headers'],
-            fn ($value, $name) => strtolower($name) !== 'content-type'
+            $this->data['headers'], 
+            fn($value, $name) => \strtolower($name) !== 'content-type', 
+            ARRAY_FILTER_USE_BOTH
         );
 
         return new MultipartStream(
-            array_map(function ($field) {
-                if (is_array($field['value'])) {
-                    return $this->makeMultipartJsonData($field);
-                }
-
-                return $this->makeOtherMultipartData($field);
-            }, $this->data['body']['data'])
+            \array_map(
+                fn ($data) => match (\gettype($data['value'])) {
+                    'string', 'resource'    =>  $this->makeOtherMultipartDataFromStringOrResource($data),
+                    'array'                 =>  $this->makeMultipartDataFromArray($data),
+                    'object'                =>  $this->makeOtherMultipartDataFromObject($data),
+                    default                 =>  [ 'name' => $data['field'], 'contents' => $data['value'] ]
+                }, 
+                $this->data['body']['data']
+            )
         );
     }
 
     /**
      * Convert the given array data into the JSON data structure when 'Content-Type' is 'multipart/form-data'.
      *
-     * @param array<string, mixed> $field
+     * @param array<string, mixed> $givenData
      *
      * @return array<string, string>
      */
-    protected function makeMultipartJsonData(array $field): array
+    protected function makeMultipartDataFromArray(array $givenData): array
     {
-        $jsonFlag   =   $field['json']['flags'] ?? 0;
-        $jsonDepth  =   $field['json']['depth'] ?? 1024;
+        $data = [
+            'name' => $givenData['field'],
+        ];
+
+        if (isset($givenData['headers'])) {
+            $data['headers'] = $givenData['headers'];
+        }
+
+        if (isset($givenData['value']['error']) && $givenData['value']['error'] === UPLOAD_ERR_OK && isset($givenData['value']['tmp_name']) && is_uploaded_file($givenData['value']['tmp_name'])) {
+            $data['contents'] = \fopen($givenData['value'], 'r');
+            return $data;
+        }
+
+        $jsonFlag   =   $givenData['json']['flags'] ?? 0;
+        $jsonDepth  =   $givenData['json']['depth'] ?? 1024;
 
         return [
-            'name'      =>  $field['field'],
-            'contents'  =>  json_encode($field['value'], $jsonFlag, $jsonDepth),
+            'name'      =>  $givenData['field'],
+            'contents'  =>  json_encode($givenData['value'], $jsonFlag, $jsonDepth),
             'headers'   =>  ['Content-Type' => 'application/json']
         ];
     }
 
     /**
-     * @param array<string, mixed> $field
+     * Convert the given array data into the JSON data structure when 'Content-Type' is 'multipart/form-data'.
+     *
+     * @param array<string, mixed> $givenData
+     *
+     * @return array<string, string>
+     */
+    protected function makeOtherMultipartDataFromStringOrResource(array $givenData): array
+    {
+        $data = [
+            'name' => $givenData['field'],
+        ];
+
+        if (isset($givenData['headers'])) {
+            $data['headers'] = $givenData['headers'];
+        }
+
+        $data['contents'] = match (\gettype($givenData['value'])) {
+            'string'    =>  \is_file($givenData['value']) ? \fopen($givenData['value'], 'r') : $givenData['value'],
+            'resource'  =>  $givenData['value'],
+            'object'    =>  \fopen($givenData['value']->getPathname(), 'r')
+        };
+
+        return $data;
+    }
+
+    /**
+     * @param array<string, mixed> $data
      *
      * @return array<string, mixed>
      */
-    protected function makeOtherMultipartData(array $field): array
+    protected function makeOtherMultipartDataFromObject(array $givenData): array
     {
-        try {
-            $file = new File($field['value']);
-            $file->open();
+        $data = [
+            'name'      =>  $givenData['field'],
+            'contents'  =>  \is_file($givenData['value']) ? \fopen($givenData['value'], 'r') : $givenData['value'],
+        ];
 
-            return [
-                'name'      =>  $field['name'] ?? $file->name(),
-                'contents'  =>  $file->contents(),
-                'headers'   =>  [ 'Content-Type' => $file->mime() ],
-            ];
-        } catch (Throwable $e) {
-            // dd($e);
-            throw new Exception("[Developer][Exception]: {$e->getMessage()}");
+        if (isset($givenData['headers'])) {
+            $data['headers'] = $givenData['headers'];
         }
+
+        return $data;
     }
 }

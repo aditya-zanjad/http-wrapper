@@ -4,9 +4,13 @@ declare (strict_types=1);
 
 namespace AdityaZanjad\Http;
 
+use Exception;
 use AdityaZanjad\Http\Enums\Client;
+use AdityaZanjad\Http\Enums\Method;
 use AdityaZanjad\Http\Interfaces\HttpClient;
 use AdityaZanjad\Http\Interfaces\HttpResponse;
+
+use function AdityaZanjad\Validator\Presets\validate;
 
 /**
  * @version 2.0
@@ -36,6 +40,23 @@ class Http
      */
     public function send(array $data): HttpResponse
     {
+        $validHttpMethods = Method::join();
+
+        $validator = validate($data, [
+            'url'               =>  'required|string|url',
+            'method'            =>  "required|string|in:{$validHttpMethods}",
+            'headers'           =>  'array|min:1',
+            'headers.*'         =>  'required_with:headers|string|min:1',
+            'body'              =>  'array|min:1',
+            'body.data'         =>  'required_with:body|min:2',
+            'body.data.*.field' =>  'required_with:body.data|string|min:1',
+            'body.data.*.value' =>  'required_with:body.data|min:1'
+        ]);
+
+        if ($validator->failed()) {
+            throw new Exception("[Developer][Exception]: {$validator->errors()->first()}");
+        }
+
         return $this->client->send($data);
     }
 
@@ -48,6 +69,24 @@ class Http
      */
     public function pool(array $data): array
     {
+        $validHttpMethods = Method::join();
+
+        $validator = validate($data, [
+            '*'                 =>  'required|array|min:2',
+            '*.url'             =>  'required|string|url',
+            '*.method'          =>  "required|string|in:{$validHttpMethods}",
+            '*.headers'         =>  'array|min:1',
+            '*.headers.*'       =>  'required_with:headers|string|min:1',
+            '*.body'            =>  'array|min:1',
+            '*.body.*'          =>  'required_with:body|min:2',
+            '*.body.*.field'    =>  'required_with:body|string|min:1',
+            '*.body.*.value'    =>  'required_with:body|min:1'
+        ]);
+
+        if ($validator->failed()) {
+            throw new Exception("[Developer][Exception]: {$validator->errors()->first()}");
+        }
+
         return $this->client->pool($data);
     }
 }
