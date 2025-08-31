@@ -16,9 +16,9 @@ use AdityaZanjad\Http\Clients\Stream\Stream;
  */
 class Client extends Enum
 {
-    public const CURL   =   'CURL';
-    public const GUZZLE =   'GUZZLE';
-    public const STREAM =   'STREAM';
+    public const CURL   =   Curl::class;
+    public const GUZZLE =   Guzzle::class;
+    public const STREAM =   Stream::class;
 
     /**
      * @inheritDoc
@@ -29,11 +29,7 @@ class Client extends Enum
      */
     public static function valueOf(string $key, bool $upperCased = true): string
     {
-        $transformedKey = $upperCased ? strtoupper($key) : strtolower($key);
-
-        if ($transformedKey === 'AUTO') {
-            return static::autoSelectProvider();
-        }
+        $transformedKey = $upperCased ? \strtoupper($key) : \strtolower($key);
 
         if (!static::exists($transformedKey)) {
             throw new Exception('[Developer][Exception]: The HTTP client "'. $key .'" does not exist.');
@@ -41,19 +37,19 @@ class Client extends Enum
 
         switch ($transformedKey) {
             case 'GUZZLE':
-                if (!class_exists(GuzzleClient::class)) {
+                if (!\class_exists(GuzzleClient::class)) {
                     throw new Exception('[Developer][Exception]: The HTTP client class "' . GuzzleClient::class . '" either does not exist OR is not auto-loaded properly.');
                 }
-                return Guzzle::class;
+                return static::GUZZLE;
 
             case 'CURL':
-                if (!extension_loaded('curl')) {
+                if (!\extension_loaded('curl')) {
                     throw new Exception('[Developer][Exception]: The HTTP client "' . CURL::class . '" requires the PHP extension "php-curl" to be properly loaded.');
                 }
-                return Curl::class;
+                return static::CURL;
 
             case 'STREAM':
-                return Stream::class;
+                return static::STREAM;
 
             default:
                 throw new Exception("[Developer][Exception]: The HTTP client wrapper \"{$transformedKey}\" does not exist or is invalid.");
@@ -65,14 +61,14 @@ class Client extends Enum
      *
      * @return string
      */
-    public static function autoSelectProvider(): string
+    public static function auto(): string
     {
         // Try loading any available HTTP clients depending on the following order.
-        if (class_exists(GuzzleClient::class)) {
+        if (\class_exists(GuzzleClient::class)) {
             return Guzzle::class;
         }
 
-        if (extension_loaded('curl')) {
+        if (\extension_loaded('curl')) {
             return Curl::class;
         }
 

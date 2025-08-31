@@ -27,7 +27,8 @@ class Http
      */
     public function __construct(string $provider = 'auto')
     {
-        $provider       =   Client::valueOf($provider);
+        $provider       =   \strtolower($provider);
+        $provider       =   $provider === 'auto' ? Client::auto() : Client::valueOf($provider);
         $this->client   =   new $provider();
     }
 
