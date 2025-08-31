@@ -89,9 +89,10 @@ class Request implements HttpRequest
      */
     protected function makeHeaders(): array
     {
-        $headers = [];
+        $headers        =   [];
+        $givenHeaders   =   $this->data['headers'] ?? [];
 
-        foreach ($this->data['headers'] ?? [] as $name => $value) {
+        foreach ($givenHeaders as $name => $value) {
             $headers[] = "{$name}: {$value}";
         }
 
@@ -108,18 +109,11 @@ class Request implements HttpRequest
      */
     protected function makeSslOptions(): array
     {
-        $ssl = null;
-
-        switch ($this->data['ssl'] ?? 2) {
-            case false:
-                $ssl = 0;
-                break;
-
-            case true:
-            default:
-                $ssl = 2;
-                break;
-        }
+        $ssl = match ($this->data['ssl'] ?? null) {
+            false   =>  0,
+            true    =>  2,
+            default =>  2
+        };
 
         return [
             CURLOPT_SSL_VERIFYHOST  =>  $ssl,
@@ -148,16 +142,13 @@ class Request implements HttpRequest
             CURLOPT_POSTFIELDS => null
         ];
 
-        if (!isset($this->data['body'])) {
+        if (!isset($this->data['body']['data']) || empty($this->data['body']['data'])) {
             return $body;
         }
 
-        $contentType = arr_first_fn(
-            $this->data['headers'],
-            fn ($value, $name) => strtolower($name) === 'content-type'
-        );
+        $contentType = arr_first_fn($this->data['headers'], fn($value, $name) => \strtolower($name) === 'content-type');
 
-        if (is_null($contentType)) {
+        if (\is_null($contentType)) {
             throw new Exception("[Developer][Exception]: You need provide the HTTP header \"Content-Type\" to be able to submit the HTTP form data.");
         }
 
@@ -174,11 +165,16 @@ class Request implements HttpRequest
                 $body[CURLOPT_POSTFIELDS] = $this->makeMultipartFormData();
                 break;
 
+            case 'text/plain':
+            case 'application/xml':
+                // Add logic
+                break;
+
             default:
                 if (is_string($this->data['body']['data']) && file_exists($this->data['body']['data'])) {
                     $body[CURLOPT_POSTFIELDS] = $this->makeOtherMultipartContents([
-                        'label' => $this->data['body']['data'],
-                        'label' => $this->data['body']['data'],
+                        'field' => $this->data['body']['field'],
+                        'value' => $this->data['body']['data'],
                     ]);
 
                     break;
@@ -198,7 +194,7 @@ class Request implements HttpRequest
      */
     protected function makeJsonFormData(): string
     {
-        return json_encode(
+        return \json_encode(
             $this->makeRegularFormData(),
             $this->data['body']['options']['json']['flags'] ?? 0,
             $this->data['body']['options']['json']['depth'] ?? 512
@@ -212,7 +208,7 @@ class Request implements HttpRequest
      */
     protected function makeUrlEncodedFormData(): string
     {
-        return http_build_query(
+        return \http_build_query(
             $this->makeRegularFormData(),
             $this->data['body']['options']['query']['numeric_prefix'] ?? '',
             $this->data['body']['options']['query']['args_separator'] ?? null,
@@ -230,7 +226,7 @@ class Request implements HttpRequest
         $payload = [];
 
         foreach ($this->data['body']['data'] as $data) {
-            $payload[$data['label']] = $data['value'];
+            $payload[$data['field']] = $data['value'];
         }
 
         return $payload;
@@ -246,12 +242,12 @@ class Request implements HttpRequest
         $payload = [];
 
         foreach ($this->data['body']['data'] as $data) {
-            if (is_array($data['value'])) {
-                $payload[$data['label']] = json_encode($data, $data['json']['depth'] ?? 512);
+            if (\is_array($data['value'])) {
+                $payload[$data['field']] = \json_encode($data, $data['json']['depth'] ?? 512);
                 continue;
             }
 
-            $payload[$data['label']] = $this->makeOtherMultipartContents($data);
+            $payload[$data['field']] = $this->makeOtherMultipartContents($data);
         }
 
         return $payload;
@@ -286,9 +282,9 @@ class Request implements HttpRequest
         $file = null;
 
         // If value of the given input field is a path to a file, open it & obtain its contents.
-        if (is_string($data['value']) && file_exists($data['value'])) {
+        if (\is_string($data['value']) && \file_exists($data['value'])) {
             try {
-                $file = fopen($data['value'], 'r');
+                $file = \fopen($data['value'], 'r');
             } catch (Throwable $e) {
                 // dd($e);
                 throw new Exception("[Developer][Exception]: Failed to open the file located at the path [{$data['value']}]. [Error: {$e->getMessage()}]");
@@ -300,9 +296,9 @@ class Request implements HttpRequest
         }
 
         // If it is not a file at all but normal data like integer, float, boolean etc.
-        if (is_null($file)) {
+        if (\is_null($file)) {
             return [
-                'name'      =>  $data['label'],
+                'name'      =>  $data['field'],
                 'contents'  =>  $file
             ];
         }
@@ -312,14 +308,14 @@ class Request implements HttpRequest
             throw new Exception("[Developer][Exception]: The HTTP Wrapper could not open the file for upload located at [{$data['value']}]");
         }
 
-        $metadata   =   stream_get_meta_data($data['value']);
-        $filename   =   isset($data['name']) ? $data['name'] : basename($metadata['uri']);
+        $metadata   =   \stream_get_meta_data($data['value']);
+        $filename   =   isset($data['name']) ? $data['name'] : \basename($metadata['uri']);
 
         // For PHP versions 8.1 & up.
-        if (class_exists(CURLStringFile::class)) {
-            return new CURLStringFile($file['value'], $filename, mime_content_type($file['value']));
+        if (\class_exists(CURLStringFile::class)) {
+            return new CURLStringFile($file['value'], $filename, \mime_content_type($file['value']));
         }
 
-        return new CURLFile($metadata['uri'], mime_content_type($file['value']), $filename);
+        return new CURLFile($metadata['uri'], \mime_content_type($file['value']), $filename);
     }
 }

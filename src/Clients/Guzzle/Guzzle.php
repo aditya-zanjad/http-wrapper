@@ -6,15 +6,15 @@ namespace AdityaZanjad\Http\Clients\Guzzle;
 
 use GuzzleHttp\Pool as GuzzlePool;
 use GuzzleHttp\Client as GuzzleClient;
+use AdityaZanjad\Http\Interfaces\HttpClient;
 use AdityaZanjad\Http\Clients\Guzzle\Request;
-use AdityaZanjad\Http\Interfaces\HttpProvider;
 use AdityaZanjad\Http\Clients\Guzzle\Response;
 use AdityaZanjad\Http\Interfaces\HttpResponse;
 
 /**
  * @version 1.0
  */
-class Guzzle implements HttpProvider
+class Guzzle implements HttpClient
 {
     /**
      * @inheritDoc

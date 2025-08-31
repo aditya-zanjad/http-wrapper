@@ -90,7 +90,10 @@ class Request implements HttpRequest
             throw new Exception("[Developer][Exception]: You must set appropriate HTTP headers to be able to pass HTTP request body.");
         }
 
-        $contentType = arr_first_fn($this->data['headers'], fn ($value, $name) => strtolower($name) === 'content-type');
+        $contentType = arr_first_fn(
+            $this->data['headers'], 
+            fn ($value, $name) => strtolower($name) === 'content-type'
+        );
 
         if (is_null($contentType)) {
             throw new Exception("[Developer][Exception]: You must set the header \"Content-Type\" to be able to pass the HTTP request body.");
@@ -127,7 +130,7 @@ class Request implements HttpRequest
         $data = [];
 
         foreach ($this->data['body']['data'] as $field) {
-            $data[$field['label']] = $field['value'];
+            $data[$field['field']] = $field['value'];
         }
 
         return json_encode(
@@ -147,7 +150,7 @@ class Request implements HttpRequest
         $data = [];
 
         foreach ($this->data['body']['data'] as $field) {
-            $data[$field['label']] = $field['value'];
+            $data[$field['field']] = $field['value'];
         }
 
         return http_build_query(
@@ -170,8 +173,8 @@ class Request implements HttpRequest
          *
          * We need to manually remove the header 'Content-Type', if it was added by the user.
          * We need the 'Guzzle' library to fill this header automatically. If we manually
-         * provide it to 'Guzzle', it'll cause some problems later on. If we wish to
-         * manually provide this header, we'll need to remove this code & then,
+         * provide it to 'Guzzle', it'll cause some problems later on. If we still wish 
+         * to manually provide this header, we'll need to remove this code & then,
          * manually provide the multipart content boundary in the same
          * header as well.
          */
@@ -204,7 +207,7 @@ class Request implements HttpRequest
         $jsonDepth  =   $field['json']['depth'] ?? 1024;
 
         return [
-            'name'      =>  $field['label'],
+            'name'      =>  $field['field'],
             'contents'  =>  json_encode($field['value'], $jsonFlag, $jsonDepth),
             'headers'   =>  ['Content-Type' => 'application/json']
         ];

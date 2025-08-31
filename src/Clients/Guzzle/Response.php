@@ -40,13 +40,13 @@ class Response implements HttpResponse
      */
     public function status(): string
     {
-        return $this->response->getReasonPhrase();
+        return \strtoupper($this->response->getReasonPhrase());
     }
 
     /**
      * @inheritDoc
      */
-    public function header(string $name)
+    public function header(string $name): null|string|array
     {
         $header = $this->response->getHeader($name);
 
@@ -81,6 +81,10 @@ class Response implements HttpResponse
 
         if (json_last_error() === JSON_ERROR_NONE) {
             return $decodedJsonBody;
+        }
+
+        if (empty($body)) {
+            return null;
         }
 
         return $body;

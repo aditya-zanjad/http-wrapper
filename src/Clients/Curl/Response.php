@@ -43,7 +43,7 @@ class Response implements HttpResponse
     /**
      * @var mixed $body
      */
-    protected $body;
+    protected mixed $body;
 
     /**
      * @param   mixed                                           $curl
@@ -78,7 +78,7 @@ class Response implements HttpResponse
     /**
      * @inheritDoc
      */
-    public function header(string $name)
+    public function header(string $name): null|string|array
     {
         $loweredName    =   strtolower($name);
         $header         =   arr_first_fn($this->headers, fn ($value, $header) => strtolower($header) === $loweredName);
@@ -114,6 +114,10 @@ class Response implements HttpResponse
         $body           =   substr($this->response, curl_getinfo($this->curl, CURLINFO_HEADER_SIZE));
         $decodedBody    =   json_decode($body, true, $options['json']['depth'] ?? 512);
         $this->body     =   (json_last_error() === JSON_ERROR_NONE) ? $decodedBody : $body;
+
+        if (empty($this->body)) {
+            $this->body = null;
+        }
 
         return $this->body;
     }

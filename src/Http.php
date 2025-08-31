@@ -4,8 +4,8 @@ declare (strict_types=1);
 
 namespace AdityaZanjad\Http;
 
-use AdityaZanjad\Http\Enums\Provider;
-use AdityaZanjad\Http\Interfaces\HttpProvider;
+use AdityaZanjad\Http\Enums\Client;
+use AdityaZanjad\Http\Interfaces\HttpClient;
 use AdityaZanjad\Http\Interfaces\HttpResponse;
 
 /**
@@ -14,17 +14,17 @@ use AdityaZanjad\Http\Interfaces\HttpResponse;
 class Http
 {
     /**
-     * @var \AdityaZanjad\Http\Interfaces\HttpClient $provider
+     * @var \AdityaZanjad\Http\Interfaces\HttpClient $client
      */
-    protected HttpProvider $provider;
+    protected HttpClient $client;
 
     /**
      * @param string $provider
      */
     public function __construct(string $provider = 'auto')
     {
-        $provider       =   Provider::valueOf($provider);
-        $this->provider =   new $provider();
+        $provider       =   Client::valueOf($provider);
+        $this->client   =   new $provider();
     }
 
     /**
@@ -36,7 +36,7 @@ class Http
      */
     public function send(array $data): HttpResponse
     {
-        return $this->provider->send($data);
+        return $this->client->send($data);
     }
 
     /**
@@ -48,6 +48,6 @@ class Http
      */
     public function pool(array $data): array
     {
-        return $this->provider->pool($data);
+        return $this->client->pool($data);
     }
 }
