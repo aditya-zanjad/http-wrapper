@@ -18,7 +18,7 @@
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/joomla/joomla-cms.git"
+            "url": "git@github.com:aditya-zanjad/validator.git"
         }
     ],
     "require": {

@@ -2,11 +2,10 @@
 
 use AdityaZanjad\Http\Http;
 use PHPUnit\Framework\TestCase;
-use AdityaZanjad\Http\Clients\Curl\Curl;
 use PHPUnit\Framework\Attributes\UsesClass;
 use AdityaZanjad\Http\Clients\Guzzle\Guzzle;
-use AdityaZanjad\Http\Clients\Guzzle\Request as GuzzleRequest;
 use PHPUnit\Framework\Attributes\CoversClass;
+use AdityaZanjad\Http\Clients\Guzzle\Request as GuzzleRequest;
 
 #[UsesClass(Http::class)]
 #[CoversClass(Http::class)]
@@ -144,29 +143,27 @@ final class GuzzleHttpRequestsTest extends TestCase
             ],
 
             'body' => [
-                [
-                    'field' => 'first_name',
-                    'value' =>  'Aditya'
-                ],
-                [
-                    'field' => 'last_name',
-                    'value' =>  'Zanjad'
-                ],
-                [
-                    'field' => 'email',
-                    'value' =>  'aditya@email.com'
-                ],
-                [
-                    'field' => 'gender',
-                    'value' =>  'male'
-                ],
-                [
-                    'field' => 'phone_number',
-                    'value' =>  '911234567890'
-                ],
-                [
-                    'field' =>  'file_001',
-                    'value' =>  fopen($this->validFiles['file_001'], 'r')
+                'data' => [
+                    [
+                        'field' =>  'first_name',
+                        'value' =>  'Aditya'
+                    ],
+                    [
+                        'field' =>  'last_name',
+                        'value' =>  'Zanjad'
+                    ],
+                    [
+                        'field' =>  'email',
+                        'value' =>  'aditya@email.com'
+                    ],
+                    [
+                        'field' =>  'gender',
+                        'value' =>  'male'
+                    ],
+                    [
+                        'field' =>  'phone_number',
+                        'value' =>  '911234567890'
+                    ],
                 ]
             ]
         ]);
@@ -197,26 +194,32 @@ final class GuzzleHttpRequestsTest extends TestCase
             ],
 
             'body' => [
-                [
-                    'field' => 'first_name',
-                    'value' =>  'Aditya'
-                ],
-                [
-                    'field' => 'last_name',
-                    'value' =>  'Zanjad'
-                ],
-                [
-                    'field' => 'email',
-                    'value' =>  'aditya@email.com'
-                ],
-                [
-                    'field' => 'gender',
-                    'value' =>  'male'
-                ],
-                [
-                    'field' => 'phone_number',
-                    'value' =>  '911234567890'
-                ],
+                'data' => [
+                    [
+                        'field' =>  'first_name',
+                        'value' =>  'Aditya'
+                    ],
+                    [
+                        'field' =>  'last_name',
+                        'value' =>  'Zanjad'
+                    ],
+                    [
+                        'field' =>  'email',
+                        'value' =>  'aditya@email.com'
+                    ],
+                    [
+                        'field' =>  'gender',
+                        'value' =>  'male'
+                    ],
+                    [
+                        'field' =>  'phone_number',
+                        'value' =>  '911234567890'
+                    ],
+                    [
+                        'field' =>  'file',
+                        'value' =>  $this->validFiles['file_001'],
+                    ]
+                ]
             ]
         ]);
 

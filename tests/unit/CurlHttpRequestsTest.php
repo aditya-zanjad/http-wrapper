@@ -145,29 +145,27 @@ final class CurlHttpRequestsTest extends TestCase
             ],
 
             'body' => [
-                [
-                    'field' => 'first_name',
-                    'value' =>  'Aditya'
-                ],
-                [
-                    'field' => 'last_name',
-                    'value' =>  'Zanjad'
-                ],
-                [
-                    'field' => 'email',
-                    'value' =>  'aditya@email.com'
-                ],
-                [
-                    'field' => 'gender',
-                    'value' =>  'male'
-                ],
-                [
-                    'field' => 'phone_number',
-                    'value' =>  '911234567890'
-                ],
-                [
-                    'field' =>  'file_001',
-                    'value' =>  fopen($this->validFiles['file_001'], 'r')
+                'data' => [
+                    [
+                        'field' =>  'first_name',
+                        'value' =>  'Aditya'
+                    ],
+                    [
+                        'field' =>  'last_name',
+                        'value' =>  'Zanjad'
+                    ],
+                    [
+                        'field' =>  'email',
+                        'value' =>  'aditya@email.com'
+                    ],
+                    [
+                        'field' =>  'gender',
+                        'value' =>  'male'
+                    ],
+                    [
+                        'field' =>  'phone_number',
+                        'value' =>  '911234567890'
+                    ],
                 ]
             ]
         ]);
@@ -198,26 +196,32 @@ final class CurlHttpRequestsTest extends TestCase
             ],
 
             'body' => [
-                [
-                    'field' => 'first_name',
-                    'value' =>  'Aditya'
-                ],
-                [
-                    'field' => 'last_name',
-                    'value' =>  'Zanjad'
-                ],
-                [
-                    'field' => 'email',
-                    'value' =>  'aditya@email.com'
-                ],
-                [
-                    'field' => 'gender',
-                    'value' =>  'male'
-                ],
-                [
-                    'field' => 'phone_number',
-                    'value' =>  '911234567890'
-                ],
+                'data' => [
+                    [
+                        'field' =>  'first_name',
+                        'value' =>  'Aditya'
+                    ],
+                    [
+                        'field' =>  'last_name',
+                        'value' =>  'Zanjad'
+                    ],
+                    [
+                        'field' =>  'email',
+                        'value' =>  'aditya@email.com'
+                    ],
+                    [
+                        'field' =>  'gender',
+                        'value' =>  'male'
+                    ],
+                    [
+                        'field' =>  'phone_number',
+                        'value' =>  '911234567890'
+                    ],
+                    [
+                        'field' =>  'file',
+                        'value' =>  $this->validFiles['file_001'],
+                    ]
+                ]
             ]
         ]);
 

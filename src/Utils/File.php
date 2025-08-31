@@ -28,9 +28,9 @@ class File
     protected array $metadata;
 
     /**
-     * @param string|resource $file
+     * @param string|resource|\SplFileInfo $file
      */
-    public function __construct($file)
+    public function __construct(mixed $file)
     {
         $this->file = $file;
     }
@@ -46,7 +46,7 @@ class File
      */
     public function open(string $mode = 'read'): static
     {
-        if ($this->alreadyOpened) {
+        if (isset($this->alreadyOpened) && $this->alreadyOpened) {
             return $this;
         }
 
