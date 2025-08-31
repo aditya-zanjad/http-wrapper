@@ -6,8 +6,8 @@ namespace AdityaZanjad\Http\Enums;
 
 use AdityaZanjad\Http\Base\Enum;
 
-use function AdityaZanjad\Http\Utils\str_contains_v2;
 use function AdityaZanjad\Http\Utils\str_replace_v2;
+use function AdityaZanjad\Http\Utils\str_contains_v2;
 
 /**
  * @version 1.0
@@ -19,7 +19,6 @@ class ReasonPhrase extends Enum
     public const SWITCHING_PROTOCOLS    =   101;
     public const PROCESSING             =   102;
     public const EARLY_HINTS            =   103;
-
 
     // HTTP 2XX
     public const OK                             =   200;
@@ -87,6 +86,7 @@ class ReasonPhrase extends Enum
     public const LOOP_DETECTED                      =   508;
     public const NOT_EXTENDED                       =   510;
     public const NETWORK_AUTHENTICATION_REQUIRED    =   511;
+
 
 
     /**

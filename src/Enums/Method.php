@@ -26,8 +26,8 @@ class Method extends Enum
      *
      * @return string
      */
-    public static function commaSeparatedList(): string
+    public static function join(): string
     {
-        return implode(', ', static::all());
+        return \implode(', ', static::all());
     }
 }

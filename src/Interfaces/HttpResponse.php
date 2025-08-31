@@ -30,7 +30,7 @@ interface HttpResponse
      *
      * @return string|array<int, string>
      */
-    public function header(string $name);
+    public function header(string $name): null|string|array;
 
     /**
      * Get all of the HTTP response headers.
@@ -46,5 +46,5 @@ interface HttpResponse
      *
      * @return mixed
      */
-    public function body(array $options = []);
+    public function body(array $options = []): mixed;
 }

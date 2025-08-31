@@ -16,7 +16,7 @@ trait ValidationRules
      */
     final public function getRulesForSingleRequestValidation(): array
     {
-        $validHttpMethods = Method::commaSeparatedList();
+        $validHttpMethods = Method::join();
 
         return [
             'url'           =>  'required|string|url',
@@ -25,7 +25,7 @@ trait ValidationRules
             'headers.*'     =>  'required_with:headers|string|min:1',
             'body'          =>  'array|min:1',
             'body.*'        =>  'required_with:body|min:2',
-            'body.*.label'  =>  'required_with:body|string|min:1',
+            'body.*.field'  =>  'required_with:body|string|min:1',
             'body.*.value'  =>  'required_with:body|min:1'
         ];
     }
@@ -37,10 +37,10 @@ trait ValidationRules
      */
     final public function getRulesForBulkRequestsValidation(): array
     {
-        $singleRequestRules =   $this->getSingleRequestValidationRules();
-        $validationRules    =   ['*' => 'required|array|min:2'];
+        $rulesOfInvidualRequest =   $this->getSingleRequestValidationRules();
+        $validationRules        =   ['*' => 'required|array|min:2'];
 
-        foreach ($singleRequestRules as $path => $rules) {
+        foreach ($rulesOfInvidualRequest as $path => $rules) {
             $validationRules["*.{$path}"] = $rules;
         }
 

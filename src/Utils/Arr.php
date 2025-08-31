@@ -36,21 +36,22 @@ function arr_first(array $arr)
  */
 function arr_first_fn(array $arr, callable $callback)
 {
-    $result = null;
+    $filteredResult = null;
 
     foreach ($arr as $key => $value) {
-        $result = $callback($value, $key);
+        $callbackResult = $callback($value, $key);
 
-        if (!is_bool($result)) {
+        if (!is_bool($callbackResult)) {
             throw new Exception("[Developer][Exception]: The callback function must return a boolean value.");
         }
 
-        if ($result === true) {
+        if ($callbackResult === true) {
+            $filteredResult = $value;
             break;
         }
     }
 
-    return $result;
+    return $filteredResult;
 }
 
 /**

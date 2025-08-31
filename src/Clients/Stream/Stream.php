@@ -3,13 +3,13 @@
 namespace AdityaZanjad\Http\Clients\Stream;
 
 use Exception;
-use AdityaZanjad\Http\Interfaces\HttpProvider;
+use AdityaZanjad\Http\Interfaces\HttpClient;
 use AdityaZanjad\Http\Interfaces\HttpResponse;
 
 /**
  * @version 1.0
  */
-class Stream implements HttpProvider
+class Stream implements HttpClient
 {
     /**
      * @inheritDoc

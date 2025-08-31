@@ -28,11 +28,6 @@ class File
     protected array $metadata;
 
     /**
-     * @var null|string $error
-     */
-    protected $error;
-
-    /**
      * @param string|resource $file
      */
     public function __construct($file)
@@ -43,9 +38,11 @@ class File
     /**
      * Open the file. If something goes wrong, throw an exception.
      *
-     * @param string $mode
+     * @param   string $mode
+     * 
+     * @throws  \Exception
      *
-     * @return static
+     * @return  static
      */
     public function open(string $mode = 'read'): static
     {
@@ -53,46 +50,40 @@ class File
             return $this;
         }
 
-        $file = null;
+        // If the file path is given.
+        if (is_string($this->file)) {
+            if (!is_file($this->file)) {
+                throw new Exception("[Developer][Exception]: The given path [{$this->file}] is not a valid file.");
+            }
 
-        if (file_exists($this->file)) {
+            if (!is_readable($this->file)) {
+                throw new Exception("[Developer][Exception]: The file at the given path [{$this->file}] is not readable.");
+            }
+
             try {
                 $file = fopen($this->file, $this->decideOpenMode($mode));
             } catch (Throwable $e) {
                 // dd($e);
-                $this->error = 'The function "fopen()" failed to open the file.';
-                return $this;
+                throw new Exception('The function "fopen()" failed to open the file.');
+            }
+
+            if ($file === false) {
+                throw new Exception('The function "fopen()" returned the boolean value "false".');
             }
         }
 
-        // If opening the file still failed due to some reason(s).
-        if ($file === false) {
-            $this->error = 'The function "fopen()" returned the boolean value "false".';
-            return $this;
+        if (!is_resource($this->file)) {
+            throw new Exception('The file must be either a valid file path OR a resource.');
         }
 
-        if (is_null($file)) {
-            $file = $this->file;
-        }
-
-        if (!is_resource($file)) {
-            $this->error = 'The file must be either a valid file path OR a resource.';
-            return $this;
-        }
-
-        $metadata = stream_get_meta_data($file);
+        $this->metadata = stream_get_meta_data($this->file);
 
         // Make sure that the current resource is a valid file.
-        if ($metadata['wrapper_type'] !== 'plain_file') {
-            $this->error = 'The given resource type is not a valid file.';
-            return $this;
+        if ($this->metadata['wrapper_type'] !== 'plain_file') {
+            throw new Exception('The given resource type is not a valid file.');
         }
 
-        $this->file             =   $file;
-        $this->error            =   null;
-        $this->metadata         =   $metadata;
-        $this->alreadyOpened    =   true;
-
+        $this->alreadyOpened = true;
         return $this;
     }
 
@@ -344,6 +335,15 @@ class File
         }
 
         return $size;
+    }
+
+    public function asResource()
+    {
+        if (!$this->alreadyOpened) {
+            $this->open();
+        }
+        
+        return $this->file;
     }
 
     /**

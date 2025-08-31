@@ -7,7 +7,7 @@ namespace AdityaZanjad\Http\Interfaces;
 /**
  * @version 2.0
  */
-interface HttpProvider
+interface HttpClient
 {
     /**
      * Send a single HTTP request & obtain its response.

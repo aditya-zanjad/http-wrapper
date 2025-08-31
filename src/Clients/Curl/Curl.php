@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace AdityaZanjad\Http\Clients\Curl;
 
-use AdityaZanjad\Http\Interfaces\HttpProvider;
+use AdityaZanjad\Http\Interfaces\HttpClient;
 use AdityaZanjad\Http\Interfaces\HttpResponse;
 
 /**
  * @version 1.0
  */
-class Curl implements HttpProvider
+class Curl implements HttpClient
 {
     /**
      * @inheritDoc

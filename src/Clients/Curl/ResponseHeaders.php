@@ -15,7 +15,7 @@ class ResponseHeaders
     protected array $headers;
 
     /**
-     * Extract the HTTP headers from the response.
+     * Extract the headers from the HTTP response.
      *
      * @link    https://stackoverflow.com/questions/9183178/can-php-curl-retrieve-response-headers-and-body-in-a-single-request#41135574
      *

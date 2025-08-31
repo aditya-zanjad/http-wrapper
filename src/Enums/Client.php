@@ -14,7 +14,7 @@ use AdityaZanjad\Http\Clients\Stream\Stream;
 /**
  * @version 2.0
  */
-class Provider extends Enum
+class Client extends Enum
 {
     public const CURL   =   'CURL';
     public const GUZZLE =   'GUZZLE';
@@ -47,7 +47,7 @@ class Provider extends Enum
                 return Guzzle::class;
 
             case 'CURL':
-                if (!extension_loaded('CURL')) {
+                if (!extension_loaded('curl')) {
                     throw new Exception('[Developer][Exception]: The HTTP client "' . CURL::class . '" requires the PHP extension "php-curl" to be properly loaded.');
                 }
                 return Curl::class;
@@ -72,7 +72,7 @@ class Provider extends Enum
             return Guzzle::class;
         }
 
-        if (extension_loaded('CURL')) {
+        if (extension_loaded('curl')) {
             return Curl::class;
         }
 
