@@ -42,6 +42,24 @@ final class GuzzleHttpRequestsTest extends TestCase
     }
 
     /**
+     * Assert that the HTTP HEAD request is successfully made through Guzzle HTTP Client.
+     *
+     * @return void
+     */
+    public function testHttpHeadRequest(): void
+    {
+        $http = new Http('guzzle');
+
+        $res = $http->send([
+            'url'       =>  "{$this->baseUrl}/api/head.php",
+            'method'    =>  'HEAD'
+        ]);
+
+        $this->assertEquals($res->code(), 200);
+        $this->assertEquals($res->status(), 'OK');
+    }
+
+    /**
      * Assert that the HTTP GET request is successfully made through the Guzzle HTTP Client.
      * 
      * @return void

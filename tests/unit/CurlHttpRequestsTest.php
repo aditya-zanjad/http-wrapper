@@ -20,12 +20,21 @@ final class CurlHttpRequestsTest extends TestCase
      */
     protected string $baseUrl = 'http://127.0.0.1:8000';
 
+    /**
+     * @var string $tempDir
+     */
     protected string $tempDir = __DIR__ . '/files';
 
+    /**
+     * @var array $validFiles
+     */
     protected array $validFiles = [
         'file_001' => null
     ];
 
+    /**
+     * @return void
+     */
     public function setUp(): void
     {
         if (!\is_dir($this->tempDir)) {
@@ -37,6 +46,9 @@ final class CurlHttpRequestsTest extends TestCase
         \file_put_contents($this->validFiles['file_001'], '{"name": "Aditya Zanjad"}');
     }
 
+    /**
+     * @return void
+     */
     public function tearDown(): void
     {
         \unlink($this->validFiles['file_001']);
@@ -44,8 +56,22 @@ final class CurlHttpRequestsTest extends TestCase
     }
 
     /**
-     * Assert that the HTTP GET request is successfully made through the Guzzle HTTP Client.
-     * 
+     * @return void
+     */
+    public function testHttpHeadRequest(): void
+    {
+        $http = new Http('curl');
+
+        $res = $http->send([
+            'url'       =>  "{$this->baseUrl}/api/head.php",
+            'method'    =>  'HEAD'
+        ]);
+
+        $this->assertEquals($res->code(), 200);
+        $this->assertEquals($res->status(), 'OK');
+    }
+
+    /**
      * @return void
      */
     public function testHttpGetRequestForJsonData(): void
@@ -79,7 +105,10 @@ final class CurlHttpRequestsTest extends TestCase
         $this->assertEquals($body['data']['phone_number'], '911234567890');
     }
 
-    public function testHttpPostRequestWithJsonBody()
+    /**
+     * @return void
+     */
+    public function testHttpPostRequestWithJsonBody(): void
     {
         $http = new Http('curl');
 

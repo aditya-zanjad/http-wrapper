@@ -27,9 +27,10 @@ class Curl implements HttpClient
         // Set the HTTP request, obtain its response & then, close the connection.
         curl_setopt_array($curl, $request);
         $response = curl_exec($curl);
+        $response = new Response($curl, $headers->all(), $response);
         curl_close($curl);
 
-        return new Response($curl, $headers->all(), $response);
+        return $response;
     }
 
     /**
