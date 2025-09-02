@@ -95,7 +95,10 @@ final class GuzzleHttpRequestsTest extends TestCase
         $this->assertEquals($body['data']['phone_number'], '911234567890');
     }
 
-    public function testHttpPostRequestWithJsonBody()
+    /**
+     * @return void
+     */
+    public function testHttpPostRequestWithJsonBody(): void
     {
         $http = new Http('guzzle');
 
@@ -265,6 +268,28 @@ final class GuzzleHttpRequestsTest extends TestCase
 
         $this->assertEquals($res->code(), 204);
         $this->assertEquals($res->status(), 'NO CONTENT');
+
+        $body = $res->body();
+
+        $this->assertEmpty($body);
+        $this->assertNull($body);
+    }
+
+    /**
+     * @return void
+     */
+    public function testHttpOptionsRequest(): void
+    {
+        $http = new Http('curl');
+
+        $res = $http->send([
+            'url'       =>  "{$this->baseUrl}/api/options.php",
+            'method'    =>  'OPTIONS',
+        ]);
+
+        $this->assertEquals($res->code(), 204);
+        $this->assertEquals($res->status(), 'NO CONTENT');
+        $this->assertEquals($res->header('Access-Control-Allow-Methods'), 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
 
         $body = $res->body();
 
