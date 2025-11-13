@@ -1,6 +1,8 @@
 <?php
 
-namespace AdityaZanjad\Http\Clients\Curl;
+declare(strict_types=1);
+
+namespace AdityaZanjad\Http\Adapters\Curl;
 
 use Exception;
 

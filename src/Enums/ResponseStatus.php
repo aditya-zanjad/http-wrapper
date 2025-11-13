@@ -7,12 +7,11 @@ namespace AdityaZanjad\Http\Enums;
 use AdityaZanjad\Http\Base\Enum;
 
 use function AdityaZanjad\Http\Utils\str_replace_v2;
-use function AdityaZanjad\Http\Utils\str_contains_v2;
 
 /**
  * @version 1.0
  */
-class ReasonPhrase extends Enum
+class ResponseStatus extends Enum
 {
     // HTTP 1XX
     public const CONTINUE               =   100;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AdityaZanjad\Http\Interfaces;
+namespace AdityaZanjad\Http\Interfaces\Http;
 
 /**
  * @version 1.0

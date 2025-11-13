@@ -135,4 +135,14 @@ class Enum
     {
         return new ReflectionClass(static::class);
     }
+
+    /**
+     * Get a comma-separated list of all the constant values.
+     *
+     * @return string
+     */
+    public static function join(): string
+    {
+        return \implode(', ', static::all());
+    }
 }

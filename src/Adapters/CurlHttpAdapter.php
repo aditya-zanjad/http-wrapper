@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace AdityaZanjad\Http\Clients\Curl;
+namespace AdityaZanjad\Http\Adapters;
 
 use AdityaZanjad\Http\Interfaces\HttpClient;
+use AdityaZanjad\Http\Adapters\Curl\Request;
+use AdityaZanjad\Http\Adapters\Curl\Response;
 use AdityaZanjad\Http\Interfaces\HttpResponse;
+use AdityaZanjad\Http\Adapters\Curl\ResponseHeaders;
 
 /**
  * @version 1.0
  */
-class Curl implements HttpClient
+class CurlHttpAdapter implements HttpClient
 {
-    /**
-     * @inheritDoc
-     */
     public function send(array $data): HttpResponse
     {
         // Prepare everything required for making a HTTP request.
@@ -33,13 +33,8 @@ class Curl implements HttpClient
         return $response;
     }
 
-    /**
-     * @inheritDoc
-     */
     public function pool(array $data): array
     {
-        $multiCurl = curl_multi_init();
-
         return [];
     }
 }

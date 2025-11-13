@@ -2,20 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AdityaZanjad\Http\Clients\Curl;
+namespace AdityaZanjad\Http\Adapters\Curl;
 
 use CURLFile;
 use Exception;
-use Throwable;
-use CURLStringFile;
-use AdityaZanjad\Http\Enums\Method;
-use AdityaZanjad\Http\Interfaces\HttpRequest;
+use AdityaZanjad\Http\Enums\RequestMethod;
+use AdityaZanjad\Http\Interfaces\Http\HttpRequest;
 
 use function AdityaZanjad\Http\Utils\arr_first_fn;
 
-/**
- * @version 1.0
- */
 class Request implements HttpRequest
 {
     /**
@@ -77,9 +72,10 @@ class Request implements HttpRequest
      */
     protected function makeMethod(): array
     {
-        return $this->data['method'] !== Method::HEAD
-            ? [CURLOPT_CUSTOMREQUEST => $this->data['method']]
-            : [CURLOPT_NOBODY => true];
+        return [
+            CURLOPT_NOBODY          =>  $this->data['method'] === RequestMethod::HEAD,
+            CURLOPT_CUSTOMREQUEST   =>  $this->data['method']
+        ];
     }
 
     /**
@@ -166,8 +162,11 @@ class Request implements HttpRequest
                 break;
 
             case 'text/plain':
+                // TODO: Add logic
+                break;
+
             case 'application/xml':
-                // Add logic
+                // TODO: Add logic
                 break;
 
             default:
@@ -263,7 +262,7 @@ class Request implements HttpRequest
             return $givenData['value'];
         }
 
-        $mime = \extension_loaded('SPL') 
+        $mime = \extension_loaded('SPL')
             ? finfo_file(finfo_open(FILEINFO_MIME_TYPE), $givenData['value'])
             : \mime_content_type($givenData['value']);
 

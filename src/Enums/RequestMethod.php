@@ -9,7 +9,7 @@ use AdityaZanjad\Http\Base\Enum;
 /**
  * @version 1.0
  */
-class Method extends Enum
+class RequestMethod extends Enum
 {
     public const GET        =   'GET';
     public const PUT        =   'PUT';
@@ -20,14 +20,4 @@ class Method extends Enum
     public const DELETE     =   'DELETE';
     public const CONNECT    =   'CONNECT';
     public const OPTIONS    =   'OPTIONS';
-
-    /**
-     * Get a comma-separated list of all the constant values.
-     *
-     * @return string
-     */
-    public static function join(): string
-    {
-        return \implode(', ', static::all());
-    }
 }
