@@ -49,17 +49,17 @@ class Request implements HttpRequest
      */
     protected function makeUrl(): array
     {
-        $url = rtrim(trim($this->data['url']), '/?');
+        $url = \rtrim(\trim($this->data['url']), '/?');
 
         if (!isset($this->data['query']['params'])) {
             return [CURLOPT_URL => $url];
         }
 
-        $query = http_build_query(
+        $query = \http_build_query(
             $this->data['query']['params'],
-            $this->data['query']['numeric_prefix']  ??  '',
-            $this->data['query']['args_separator']  ??  null,
-            $this->data['query']['encoding_type']   ??  PHP_QUERY_RFC3986,
+            $this->data['query']['prefix']      ??  '',
+            $this->data['query']['separator']   ??  null,
+            $this->data['query']['encoding']    ??  PHP_QUERY_RFC3986,
         );
 
         return [CURLOPT_URL => "{$url}?{$query}"];
@@ -93,9 +93,35 @@ class Request implements HttpRequest
         }
 
         return [
-            CURLOPT_HEADER      =>  true,
+            CURLOPT_HEADER      =>  false,
             CURLOPT_HTTPHEADER  =>  $headers
         ];
+    }
+
+    /**
+     * Set HTTP Request cookies
+     *
+     * @return array
+     */
+    protected function makeCookies(): array
+    {
+        if (!isset($this->data['cookies']['data'])) {
+            return [];
+        }
+
+        $options = [];
+
+        if (isset($this->data['cookies']['save_to'])) {
+            $options[CURLOPT_COOKIEFILE] = $this->data['cookies']['save_to'];
+        }
+
+        if (\is_file($this->data['cookies']['data'])) {
+            $options[CURLOPT_COOKIEJAR] = $this->data['cookies']['file'];
+            return $options;
+        }
+
+        $options[CURLOPT_COOKIE] = $this->data['cookies']['data'];
+        return $options;
     }
 
     /**
@@ -105,15 +131,9 @@ class Request implements HttpRequest
      */
     protected function makeSslOptions(): array
     {
-        $ssl = match ($this->data['ssl'] ?? null) {
-            false   =>  0,
-            true    =>  2,
-            default =>  2
-        };
-
         return [
-            CURLOPT_SSL_VERIFYHOST  =>  $ssl,
-            CURLOPT_SSL_VERIFYPEER  =>  $ssl
+            CURLOPT_SSL_VERIFYHOST  =>  ($this->data['ssl']['host'] ?? null) === false ? 0 : 2,
+            CURLOPT_SSL_VERIFYPEER  =>  ($this->data['ssl']['peer'] ?? null) === false ? false : true 
         ];
     }
 
@@ -142,10 +162,17 @@ class Request implements HttpRequest
             return $body;
         }
 
-        $contentType = arr_first_fn($this->data['headers'], fn($value, $name) => \strtolower($name) === 'content-type');
+        $contentType = 'default';
+
+        foreach ($this->data['headers'] as $headerName => $headerValue) {
+            if (\strtolower($headerName) === 'content-type') {
+                $contentType = $headerValue;
+                break;
+            }
+        }
 
         if (\is_null($contentType)) {
-            throw new Exception("[Developer][Exception]: You need provide the HTTP header \"Content-Type\" to be able to submit the HTTP form data.");
+            throw new Exception("[Developer][Exception]: You need to provide the HTTP header \"Content-Type\" to be able to submit the HTTP form data.");
         }
 
         switch ($contentType) {
@@ -263,7 +290,7 @@ class Request implements HttpRequest
         }
 
         $mime = \extension_loaded('SPL')
-            ? finfo_file(finfo_open(FILEINFO_MIME_TYPE), $givenData['value'])
+            ? \finfo_file(finfo_open(FILEINFO_MIME_TYPE), $givenData['value'])
             : \mime_content_type($givenData['value']);
 
         return new CURLFile($givenData['value'], $mime, $givenData['name'] ?? null);

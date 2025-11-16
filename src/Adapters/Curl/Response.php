@@ -8,18 +8,30 @@ use CurlHandle;
 use AdityaZanjad\Http\Enums\ResponseStatus;
 use AdityaZanjad\Http\Interfaces\HttpResponse;
 
-use function AdityaZanjad\Http\Utils\arr_first;
-use function AdityaZanjad\Http\Utils\arr_first_fn;
-
 /**
  * @version 1.0
  */
 class Response implements HttpResponse
 {
+    /**
+     * HTTP Response status code.
+     *
+     * @var int $code
+     */
     protected int $code;
 
+    /**
+     * HTTP response status reason phrase.
+     *
+     * @var string $status
+     */
     protected string $status;
 
+    /**
+     * HTTP response body.
+     *
+     * @var mixed
+     */
     protected mixed $body;
 
     /**
@@ -54,18 +66,15 @@ class Response implements HttpResponse
      */
     public function header(string $name): null|string|array
     {
-        $loweredName    =   strtolower($name);
-        $header         =   arr_first_fn($this->headers, fn($value, $header) => strtolower($header) === $loweredName);
+        $loweredName = \strtolower($name);
 
-        if (is_string($header)) {
-            return $header;
+        foreach ($this->headers as $headerName => $headerValue) {
+            if (\strtolower($headerName) === $loweredName) {
+                return $headerValue;
+            }
         }
 
-        if (count($header) > 1) {
-            return $header;
-        }
-
-        return arr_first($header);
+        return null;
     }
 
     /**
@@ -85,14 +94,12 @@ class Response implements HttpResponse
             return $this->body;
         }
 
-        $body           =   substr($this->response, curl_getinfo($this->curl, CURLINFO_HEADER_SIZE));
-        $decodedBody    =   json_decode($body, true, $options['json']['depth'] ?? 512);
-        $this->body     =   (json_last_error() === JSON_ERROR_NONE) ? $decodedBody : $body;
+        $this->body = \json_decode($this->response, true, $options['json']['depth'] ?? 512);
 
-        if (empty($this->body)) {
-            $this->body = null;
+        if (\json_last_error() === JSON_ERROR_NONE) {
+            return $this->body;
         }
 
-        return $this->body;
+        return $this->response;
     }
 }

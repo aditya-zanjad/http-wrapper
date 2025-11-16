@@ -15,21 +15,27 @@ use AdityaZanjad\Http\Adapters\Curl\ResponseHeaders;
  */
 class CurlHttpAdapter implements HttpClient
 {
+    public function __construct(protected array $config = [])
+    {
+        //
+    }
+
     public function send(array $data): HttpResponse
     {
-        // Prepare everything required for making a HTTP request.
-        $curlRequest                        =   new Request($data);
-        $request                            =   $curlRequest->build();
-        $curl                               =   curl_init();
-        $headers                            =   new ResponseHeaders();
-        $request[CURLOPT_HEADERFUNCTION]    =   [$headers, 'process'];
+        // Prepare everything required to make the HTTP request.
+        $curl       =   \curl_init();
+        $req        =   (new Request($data))->build();
+        $headers    =   new ResponseHeaders();
 
-        // Set the HTTP request, obtain its response & then, close the connection.
-        curl_setopt_array($curl, $request);
-        $response = curl_exec($curl);
+        // Set the HTTP request options.
+        $req[CURLOPT_HEADERFUNCTION] = [$headers, 'process'];
+        \curl_setopt_array($curl, $req);
+
+        // Send the HTTP request & obtain its response.
+        $response = \curl_exec($curl);
         $response = new Response($curl, $headers->all(), $response);
-        curl_close($curl);
 
+        \curl_close($curl);
         return $response;
     }
 
