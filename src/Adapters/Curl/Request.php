@@ -9,8 +9,6 @@ use Exception;
 use AdityaZanjad\Http\Enums\RequestMethod;
 use AdityaZanjad\Http\Interfaces\Http\HttpRequest;
 
-use function AdityaZanjad\Http\Utils\arr_first_fn;
-
 class Request implements HttpRequest
 {
     /**
@@ -38,6 +36,7 @@ class Request implements HttpRequest
             $this->makeHeaders(),
             $this->makeTimeout(),
             $this->makeSslOptions(),
+            $this->makeRedirectOptions(),
             $this->makeOtherNecessaryOptions(),
         );
     }
@@ -145,6 +144,27 @@ class Request implements HttpRequest
     protected function makeTimeout(): array
     {
         return [CURLOPT_TIMEOUT => $this->data['timeout'] ?? 120];
+    }
+
+    protected function makeRedirectOptions(): array
+    {
+        if (!isset($this->data['redirect']['allow'])) {
+            return [
+                CURLOPT_FOLLOWLOCATION  =>  true,
+                CURLOPT_MAXREDIRS       =>  5
+            ];
+        }
+
+        if ($this->data['redirect']['allow'] === false) {
+            return [CURLOPT_FOLLOWLOCATION => false];
+        }
+
+        $options[CURLOPT_FOLLOWLOCATION] = $this->data['redirect']['allow'];
+
+        return [
+            CURLOPT_FOLLOWLOCATION  =>  true,
+            CURLOPT_MAXREDIRS       =>  $this->data['redirect']['max'] ?? 5
+        ];
     }
 
     /**
@@ -309,7 +329,6 @@ class Request implements HttpRequest
         return \json_encode($givenData['value'], $data['json']['depth'] ?? 512);
     }
 
-
     /**
      * Set other necessary options for making a HTTP request.
      *
@@ -318,10 +337,8 @@ class Request implements HttpRequest
     protected function makeOtherNecessaryOptions(): array
     {
         return [
-            CURLOPT_MAXREDIRS       =>  $this->data['max_redirects'] ?? 5,
             CURLOPT_HTTP_VERSION    =>  $this->data['version'] ?? CURL_HTTP_VERSION_1_1,
             CURLOPT_RETURNTRANSFER  =>  true,
-            CURLOPT_FOLLOWLOCATION  =>  true,
         ];
     }
 }

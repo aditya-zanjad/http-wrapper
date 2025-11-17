@@ -41,6 +41,43 @@ class CurlHttpAdapter implements HttpClient
 
     public function pool(array $data): array
     {
-        return [];
+        $curlMulti  =   \curl_multi_init();
+        $curls      =   [];
+        $headers    =   [];
+
+        // Prepare CURL Handles for making the HTTP requests.
+        foreach ($data['requests'] as $label => $request) {
+            $curl                           =   curl_init();
+            $req                            =   (new Request($request))->build();
+            $headers                        =   new ResponseHeaders();
+            $req[CURLOPT_HEADERFUNCTION]    =   [$headers, 'process'];
+
+            \curl_setopt_array($curl, $req);
+            \curl_multi_add_handle($curlMulti, $curl);
+
+            $curls[$label]      =   $curl;
+            $headers[$label]    =   $headers;
+        }
+
+        // Execute CURL handles & obtain their responses.
+        $remainingRequests = 1;
+
+        while ($remainingRequests > 1) {
+            \curl_multi_exec($curlMulti, $remainingRequests);
+            \curl_multi_select($curlMulti, 1);
+        }
+
+        // Collect & return the CURL HTTP responses.
+        $responses = [];
+
+        foreach ($curls as $label => $curl) {
+            $responses[$label] = new Response($curl, $headers[$label], curl_multi_getcontent($curl));
+
+            \curl_multi_remove_handle($curlMulti, $curl);
+            \curl_close($curl);
+        }
+
+        \curl_multi_close($curlMulti);
+        return $responses;
     }
 }
