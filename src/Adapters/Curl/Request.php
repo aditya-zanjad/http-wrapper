@@ -32,9 +32,12 @@ class Request implements HttpRequest
         return array_replace(
             $this->makeUrl(),
             $this->makeBody(),
+            $this->makeProxy(),
             $this->makeMethod(),
+            $this->makeCookies(),
             $this->makeHeaders(),
             $this->makeTimeout(),
+            $this->makeHttpAuth(),
             $this->makeSslOptions(),
             $this->makeRedirectOptions(),
             $this->makeOtherNecessaryOptions(),
@@ -86,15 +89,84 @@ class Request implements HttpRequest
     {
         $headers        =   [];
         $givenHeaders   =   $this->data['headers'] ?? [];
+        $otherHeaders   =   [];
 
         foreach ($givenHeaders as $name => $value) {
+            if (\strtolower($name) === 'referer') {
+                $otherHeaders[CURLOPT_REFERER] = $value;
+                continue;
+            }
+
+            if (\strtolower($name) === 'user-agent') {
+                $otherHeaders[CURLOPT_USERAGENT] = $value;
+            }
+
             $headers[] = "{$name}: {$value}";
         }
 
         return [
             CURLOPT_HEADER      =>  false,
-            CURLOPT_HTTPHEADER  =>  $headers
+            CURLOPT_HTTPHEADER  =>  $headers,
+
+            ...$otherHeaders
         ];
+    }
+
+    protected function makeHttpAuth(): array
+    {
+        if (!isset($this->data['auth'])) {
+            return [];
+        }
+
+        return [
+            CURLOPT_USERPWD     =>  "{$this->data['auth']['username']}:{$this->data['auth']['password']}",
+            CURLOPT_HTTPAUTH    =>  $this->data['auth'] === 'basic' ? CURLAUTH_BASIC : CURLAUTH_DIGEST | CURLAUTH_DIGEST_IE,
+        ];
+    }
+
+    protected function makeProxy(): array
+    {
+        if (!isset($this->data['proxy'])) {
+            return [];
+        }
+
+        $options = [
+            CURLOPT_PROXY       =>  $this->data['proxy']['url'],
+            CURLOPT_PROXYPORT   =>  $this->data['proxy']['port'],
+        ];
+
+        if (isset($this->data['proxy']['pre_url'])) {
+            $options[CURLOPT_PRE_PROXY] = $this->data['proxy']['pre_url'];
+        }
+
+        if (isset($this->data['proxy']['headers'])) {
+            $options[CURLOPT_PROXYHEADER] = \array_map(
+                fn($value, $name) => "{$name}: {$value}",
+                $this->data['proxy']['headers']
+            );
+        }
+
+        if (isset($this->data['proxy']['type'])) {
+            $options[CURLOPT_PROXYTYPE] = $this->data['proxy']['type'];
+        }
+
+        if (isset($this->data['proxy']['exclude'])) {
+            $options[CURLOPT_NOPROXY] = \implode(',', $this->data['proxy']['exclude']);
+        }
+
+        if (isset($this->data['proxy']['tunnel'])) {
+            $options[CURLOPT_HTTPPROXYTUNNEL] = $this->data['proxy']['tunnel'];
+        }
+
+        if (isset($this->data['proxy']['auth'])) {
+            $options[CURLOPT_PROXYAUTH]     =   $this->data['proxy']['auth']['type'];
+            $options[CURLOPT_PROXYUSERPWD]  =   "{$this->data['proxy']['auth']['username']}:{$this->data['proxy']['auth']['password']}";
+        }
+
+        $options[CURLOPT_PROXY_SSL_VERIFYHOST] = $this->data['proxy']['ssl']['verify_host'] ?? true;
+        $options[CURLOPT_PROXY_SSL_VERIFYPEER] = $this->data['proxy']['ssl']['verify_peer'] === false ? 0 : 2;
+
+        return $options;
     }
 
     /**
@@ -115,7 +187,7 @@ class Request implements HttpRequest
         }
 
         if (\is_file($this->data['cookies']['data'])) {
-            $options[CURLOPT_COOKIEJAR] = $this->data['cookies']['file'];
+            $options[CURLOPT_COOKIEJAR] = $this->data['cookies']['data'];
             return $options;
         }
 
@@ -131,8 +203,8 @@ class Request implements HttpRequest
     protected function makeSslOptions(): array
     {
         return [
-            CURLOPT_SSL_VERIFYHOST  =>  ($this->data['ssl']['host'] ?? null) === false ? 0 : 2,
-            CURLOPT_SSL_VERIFYPEER  =>  ($this->data['ssl']['peer'] ?? null) === false ? false : true 
+            CURLOPT_SSL_VERIFYHOST  => ($this->data['ssl']['host'] ?? null) === false ? 0 : 2,
+            CURLOPT_SSL_VERIFYPEER  => ($this->data['ssl']['peer'] ?? null) === false ? false : true
         ];
     }
 
