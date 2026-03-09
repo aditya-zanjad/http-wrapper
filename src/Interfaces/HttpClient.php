@@ -1,29 +1,12 @@
 <?php
 
-declare (strict_types=1);
+declare(strict_types=1);
 
-namespace AdityaZanjad\Http\Interfaces;
+namespace AdityaZanjad\HttpWrapper\Interfaces;
 
-/**
- * @version 2.0
- */
 interface HttpClient
 {
-    /**
-     * Send a single HTTP request & obtain its response.
-     *
-     * @param array<int|string, string|array<string, mixed>> $data
-     *
-     * @return \AdityaZanjad\Http\Interfaces\HttpResponse
-     */
-    public function send(array $data): HttpResponse;
+    public function send(array $request): HttpResponse;
 
-    /**
-     * Send more than one concurrent HTTP requests & obtain their responses.
-     *
-     * @param array<int, array<string, mixed>> $data
-     *
-     * @return array<int, \AdityaZanjad\Http\Interfaces\HttpClient>
-     */
-    public function pool(array $data): array;
+    public function pool(array $requests): array;
 }

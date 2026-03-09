@@ -1,28 +1,14 @@
 {
-    "name": "aditya-zanjad/http-client",
-    "type": "library",
-    "license": "MIT",
-    "minimum-stability": "dev",
-    "require-dev": {
-        "phpunit/phpunit": "^10.4"
-    },
-    "autoload": {
-        "psr-4": {
-            "AdityaZanjad\\Http\\": "src/"
-        },
-        "files": [
-            "src/Utils/Arr.php",
-            "src/Utils/Str.php"
-        ]
-    },
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "git@github.com:aditya-zanjad/validator.git"
-        }
-    ],
-    "require": {
-        "guzzlehttp/guzzle": "8.0.x-dev",
-        "aditya-zanjad/validator": "dev-main"
+  "name": "aditya-zanjad/http-wrappers",
+  "type": "library",
+  "license": "MIT",
+  "minimum-stability": "dev",
+  "autoload": {
+    "psr-4": {
+      "AdityaZanjad\\HttpWrappers\\": "src/"
     }
+  },
+  "require": {
+    "aditya-zanjad/validator": "dev-main"
+  }
 }

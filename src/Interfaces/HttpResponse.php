@@ -2,49 +2,17 @@
 
 declare(strict_types=1);
 
-namespace AdityaZanjad\Http\Interfaces;
+namespace AdityaZanjad\HttpWrapper\Interfaces;
 
-/**
- * @version 1.0
- */
 interface HttpResponse
 {
-    /**
-     * Get the HTTP status code for the received response.
-     *
-     * @return int
-     */
     public function code(): int;
 
-    /**
-     * Get the reason phrase for the received response.
-     *
-     * @return string
-     */
-    public function status(): string;
+    public function status(): null|string;
 
-    /**
-     * Get the value of the HTTP response header by its name.
-     *
-     * @param string $name
-     *
-     * @return string|array<int, string>
-     */
     public function header(string $name): null|string|array;
 
-    /**
-     * Get all of the HTTP response headers.
-     *
-     * @return array
-     */
     public function headers(): array;
 
-    /**
-     * Obtain the HTTP response body.
-     *
-     * @param array<int|string, string|array<int, string>> $options
-     *
-     * @return mixed
-     */
-    public function body(array $options = []): mixed;
+    public function body(): mixed;
 }
