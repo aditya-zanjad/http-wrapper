@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AdityaZanjad\HttpWrapper\Interfaces;
+namespace AdityaZanjad\HttpAdapters\Interfaces;
 
-interface HttpClient
+interface HttpAdapter
 {
     public function send(array $request): HttpResponse;
 

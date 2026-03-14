@@ -1,14 +1,11 @@
 {
-  "name": "aditya-zanjad/http-wrappers",
+  "name": "aditya-zanjad/http-adapters",
   "type": "library",
   "license": "MIT",
   "minimum-stability": "dev",
   "autoload": {
     "psr-4": {
-      "AdityaZanjad\\HttpWrappers\\": "src/"
+      "AdityaZanjad\\HttpAdapters\\": "src/"
     }
-  },
-  "require": {
-    "aditya-zanjad/validator": "dev-main"
   }
 }
