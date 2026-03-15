@@ -11,58 +11,57 @@ use AdityaZanjad\HttpAdapters\Adapters\Curl\Response;
 use AdityaZanjad\HttpAdapters\Interfaces\HttpResponse;
 use AdityaZanjad\HttpAdapters\Adapters\Curl\ResponseHeaders;
 
-class Curl implements HttpAdapter 
+class Curl implements HttpAdapter
 {
     public function __construct(protected array $options = [])
     {
         if (!\extension_loaded('curl')) {
-            throw new Exception("[Developer][Exception]: The PHP extension is not enabled/installed on this sytem. This HTTP Adapter requires it to work.");
+            throw new Exception("[Developer][Exception]: The PHP extension is not enabled/installed on this sytem. This HTTP Adapter requires it to work. Either enable this extension or switch to a different HTTP adapter.");
         }
     }
-    
+
     public function send(array $request): HttpResponse
-    {        
+    {
         $request                            =   new Request($request);
         $options                            =   $request->build();
         $responseHeaders                    =   new ResponseHeaders();
         $options[CURLOPT_HEADERFUNCTION]    =   [$responseHeaders, 'process'];
-        
-        $req = curl_init();
-        curl_setopt_array($req, $options);
-        $res = curl_exec($req);
+
+        $req = \curl_init();
+        \curl_setopt_array($req, $options);
+        $res = \curl_exec($req);
 
         return new Response($req, $res, $responseHeaders->all());
     }
-    
+
     public function pool(array $requests): array
     {
-        $data   =   [];
-        $curls  =   curl_multi_init();
-        
+        $data               =   [];
+        $requestsHandles    =   \curl_multi_init();
+
         foreach ($requests as $index => $request) {
-            $data[$index]['request']                                    =   new Request($request);
-            $data[$index]['request_options']                            =   $data[$index]['request']->build();
-            $data[$index]['header_processor']                           =   new ResponseHeaders();
-            $data[$index]['request_options'][CURLOPT_HEADERFUNCTION]    =   [$data[$index]['header_processor'], 'process'];
+            $options                            =   (new Request($request))->build();
+            $data[$index]['headers']            =   new ResponseHeaders();
+            $options[CURLOPT_HEADERFUNCTION]    =   [$data[$index]['headers'], 'process'];
 
             $data[$index]['curl'] = curl_init();
-            curl_setopt_array($data[$index]['curl'], $data[$index]['request_options']);
-            curl_multi_add_handle($curls, $data[$index]['curl']);
+            \curl_setopt_array($data[$index]['curl'], $options);
+            \curl_multi_add_handle($requestsHandles, $data[$index]['curl']);
         }
 
-        $stillRunning = false;
-        
-        do {
-            curl_multi_exec($curls, $stillRunning);
-        } while ($stillRunning);
+        $stillRunning = 1;
+
+        while ($stillRunning > 0) {
+            \curl_multi_exec($requestsHandles, $stillRunning);
+        }
 
         $result = [];
 
         foreach ($data as $index => $d) {
-            curl_multi_remove_handle($curls, $d['curl']);
-            $result[$index] = new Response($d['curl'], curl_multi_getcontent($d['curl']), $d['header_processor']->all());
+            \curl_multi_remove_handle($requestsHandles, $d['curl']);
+            $result[$index] = new Response($d['curl'], \curl_multi_getcontent($d['curl']), $d['headers']->all());
         }
-        
+
         return $result;
     }
 }
