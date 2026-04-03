@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace AdityaZanjad\HttpAdapters\Adapters\Curl;
 
-use Exception;
 use CurlHandle;
 use AdityaZanjad\HttpAdapters\Interfaces\HttpResponse;
 
 class Response implements HttpResponse
 {
-    public function __construct(protected CurlHandle $req, protected bool|string $res, protected array $headers) {
+    public function __construct(protected CurlHandle $req, protected bool|string $res, protected array $headers) 
+    {
         //
     }
 
     public function code(): int
     {
-        return curl_getinfo($this->req, CURLINFO_HTTP_CODE);
+        return \curl_getinfo($this->req, CURLINFO_HTTP_CODE);
     }
 
     public function status(): null|string
@@ -111,8 +111,18 @@ class Response implements HttpResponse
 
     public function body(): mixed
     {
-        if (\is_string($this->res) && \json_validate($this->res)) {
-            return \json_decode($this->res);
+        if (\is_bool($this->res)) {
+            return $this->res;
+        }
+
+        if (\function_exists('json_validate') && \json_validate($this->res)) {
+            return $this->res = \json_decode($this->res);
+        }
+
+        $body = \json_decode($this->res, true);
+
+        if (\json_last_error() === JSON_ERROR_NONE) {
+            return $body;
         }
 
         return (string) $this->res;

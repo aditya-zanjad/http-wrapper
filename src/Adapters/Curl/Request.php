@@ -9,88 +9,89 @@ use AdityaZanjad\HttpAdapters\Interfaces\HttpRequest;
 
 class Request implements HttpRequest
 {
-    public function __construct(protected array $request)
+    public function __construct(protected array $options)
     {
         //
     }
 
     public function build(): array
     {
-        $curlRequest = [
-            CURLOPT_URL             =>  $this->request['url'],
+        $options = [
+            CURLOPT_URL             =>  $this->options['url'],
             CURLOPT_HEADER          =>  false,
-            CURLOPT_TIMEOUT         =>  $this->request['timeout'] ?? 30,
-            CURLOPT_MAXREDIRS       =>  $this->request['redirects']['max'] ?? 5,
-            CURLOPT_CUSTOMREQUEST   =>  $this->request['method'] ?? 'GET',
-            CURLOPT_FRESH_CONNECT   =>  $this->request['fresh'] ?? false, 
-            CURLOPT_FOLLOWLOCATION  =>  $this->request['redirects']['allow'] ?? true,
+            CURLOPT_TIMEOUT         =>  $this->options['timeout'] ?? 30,
+            CURLOPT_MAXREDIRS       =>  $this->options['redirects']['max'] ?? 5,
+            CURLOPT_CUSTOMREQUEST   =>  $this->options['method'] ?? 'GET',
+            CURLOPT_FRESH_CONNECT   =>  $this->options['fresh'] ?? false, 
+            CURLOPT_FOLLOWLOCATION  =>  $this->options['redirects']['allow'] ?? true,
             CURLOPT_RETURNTRANSFER  =>  true,
         ];
 
-        if (isset($this->request['version'])) {
-            $curlRequest[CURLOPT_HTTP_VERSION] = $this->request['version'];
+        if (isset($this->options['version'])) {
+            $options[CURLOPT_HTTP_VERSION] = $this->options['version'];
         }
 
-        if (isset($this->request['read_timeout'])) {
-            $curlRequest[CURLOPT_LOW_SPEED_LIMIT]   =   1;
-            $curlRequest[CURLOPT_LOW_SPEED_TIME]    =   $this->request['read_timeout'];
+        if (isset($this->options['read_timeout'])) {
+            $options[CURLOPT_LOW_SPEED_LIMIT]   =   1;
+            $options[CURLOPT_LOW_SPEED_TIME]    =   $this->options['read_timeout'];
         }
 
         if (isset($this->requests['query'])) {
-            $curlRequest[CURLOPT_URL] .= \http_build_query(
-                $this->request['query']['params'],
-                $this->request['query']['options']['prefix'] ?? '',
-                $this->request['query']['options']['separator'] ?? null,
-                $this->request['query']['options']['encoding'] ?? PHP_QUERY_RFC1738,
+            $options[CURLOPT_URL] .= \http_build_query(
+                $this->options['query']['params'],
+                $this->options['query']['options']['prefix']    ??  '',
+                $this->options['query']['options']['separator'] ??  null,
+                $this->options['query']['options']['encoding']  ??  PHP_QUERY_RFC1738,
             );
         }
 
-        if (isset($this->request["headers"])) {
-            $curlRequest[CURLOPT_HTTPHEADER] = $this->makeHeaders();
+        if (isset($this->options["headers"])) {
+            $options[CURLOPT_HTTPHEADER] = $this->makeHeaders();
         }
 
-        if (isset($this->request['auth'])) {
-            $curlRequest += $this->makeAuthData();
+        if (isset($this->options['auth'])) {
+            $options += $this->makeAuthData();
         }
 
-        if (isset($this->request['cookies']['input'])) {
-            $curlRequest[CURLOPT_COOKIEFILE] = $this->request['cookies']['input'];
+        if (isset($this->options['cookies']['input'])) {
+            $options[CURLOPT_COOKIEFILE] = $this->options['cookies']['input'];
         }
 
-        if (isset($this->request['cookies']['output'])) {
-            $curlRequest[CURLOPT_COOKIEJAR] = $this->request['cookies']['output'];
+        if (isset($this->options['cookies']['output'])) {
+            $options[CURLOPT_COOKIEJAR] = $this->options['cookies']['output'];
         }
 
-        if (isset($this->request['ssl']['certificate'])) {
-            $curlRequest += $this->makeSslOptions();
+        if (isset($this->options['ssl']['certificate'])) {
+            $options += $this->makeSslOptions();
         }
 
-        $curlRequest[CURLOPT_ENCODING] = $this->makeAcceptEncodingHeader();
+        $options[CURLOPT_ENCODING] = $this->makeAcceptEncodingHeader();
 
-        if (isset($this->request['ssl']['key'])) {
-            $curlRequest[CURLOPT_SSLKEY] = $this->request['ssl']['key'];
+        if (isset($this->options['progress'])) {
+            $options += $this->makeProgressCallable();
         }
 
-        if (isset($this->request['progress'])) {
-            $curlRequest += $this->makeProgressCallable();
+        if (isset($this->options['ip_resolve'])) {
+            $options[CURLOPT_IPRESOLVE] = $this->options['ip_resolve'] === 'v6' ? CURL_IPRESOLVE_V6 : CURL_IPRESOLVE_V4;
         }
 
-        if (isset($this->request['ip_resolve'])) {
-            $curlRequest[CURLOPT_IPRESOLVE] = $this->request['ip_resolve'] === 'v6' ? CURL_IPRESOLVE_V6 : CURL_IPRESOLVE_V4;
+        if (isset($this->options["body"]["content"])) {
+            $options += $this->makeBody();
         }
 
-        if (isset($this->request["body"]["content"])) {
-            $curlRequest += $this->makeBody();
+        if (isset($this->options['save_to'])) {
+            $this->options[CURLOPT_FILE]            =   \is_string($this->options['save_to']) ? \fopen($this->options['save_to'], 'w+') : $this->options['save_to'];
+            $this->options[CURLOPT_RETURNTRANSFER]  =   false;
         }
 
-        return $curlRequest;
+        return $options;
     }
 
     protected function makeHeaders(): array
     {
         $headers = [];
 
-        foreach ($this->request['headers'] as $name => $value) {
+        foreach ($this->options['headers'] as $name => $value) {
             $headers[] = "{$name}: {$value}";
         }
 
@@ -99,11 +100,11 @@ class Request implements HttpRequest
 
     protected function makeAuthData(): array
     {
-        $data = match ($this->request['auth']['method']) {
-            'basic'     =>  [CURLOPT_HTTPAUTH => CURLAUTH_BASIC, CURLOPT_USERPWD => "{$this->request['auth']['username']}:{$this->request['auth']['password']}"],
-            'digest'    =>  [CURLOPT_HTTPAUTH => CURLAUTH_DIGEST, CURLOPT_USERPWD => "{$this->request['auth']['username']}:{$this->request['auth']['password']}"],
+        $data = match ($this->options['auth']['method']) {
+            'basic'     =>  [CURLOPT_HTTPAUTH => CURLAUTH_BASIC, CURLOPT_USERPWD => "{$this->options['auth']['username']}:{$this->options['auth']['password']}"],
+            'digest'    =>  [CURLOPT_HTTPAUTH => CURLAUTH_DIGEST, CURLOPT_USERPWD => "{$this->options['auth']['username']}:{$this->options['auth']['password']}"],
 
-            default => throw new Exception("[Developer][Exception]: The HTTP authentication method {$this->request['auth']['method']} is either invalid or not supported yet.")
+            default => throw new Exception("[Developer][Exception]: The HTTP authentication method {$this->options['auth']['method']} is either invalid or not supported yet.")
         };
 
         return [
@@ -114,17 +115,17 @@ class Request implements HttpRequest
     protected function makeSslOptions(): array
     {
         $options                    =   [];
-        $options[CURLOPT_SSLCERT]   =   $this->request['ssl']['client']['certificate'];
+        $options[CURLOPT_SSLCERT]   =   $this->options['ssl']['client']['certificate'];
             
-        if (isset($this->request['ssl']['client']['password'])) {
-            $options[CURLOPT_SSLCERTPASSWD] = $this->request['ssl']['client']['password'];
+        if (isset($this->options['ssl']['client']['password'])) {
+            $options[CURLOPT_SSLCERTPASSWD] = $this->options['ssl']['client']['password'];
         }
 
-        if (isset($this->request['ssl']['client']['key'])) {
-            $options[CURLOPT_SSLKEY] = $this->request['ssl']['client']['key'];
+        if (isset($this->options['ssl']['client']['key'])) {
+            $options[CURLOPT_SSLKEY] = $this->options['ssl']['client']['key'];
         }
 
-        if (isset($this->request['ssl']['verify']['allow']) === false) {
+        if (isset($this->options['ssl']['verify']['allow']) === false) {
             $options[CURLOPT_SSL_VERIFYPEER]    =   false;
             $options[CURLOPT_SSL_VERIFYHOST]    =   0;
 
@@ -153,46 +154,46 @@ class Request implements HttpRequest
 
     protected function makeAcceptEncodingHeader(): string
     {
-        if (!isset($this->request['decode'])) {
+        if (!isset($this->options['decode'])) {
             return '';
         }
 
-        if (!\is_string($this->request['decode'])) {
+        if (!\is_string($this->options['decode'])) {
             throw new Exception("[Developer][Exception]: The parameter 'decode' has an invalid value. It should be either true (bool), false (bool) or a string");
         }
 
-        return match ($this->request['decode']) {
+        return match ($this->options['decode']) {
             'all'   =>  '',
             'none'  =>  'identity',
-            default =>  $this->request['decode']
+            default =>  $this->options['decode']
         };
     }
 
     protected function makeProgressCallable(): array
     {
-        if ($this->request['progress']['allow'] === false) {
+        if ($this->options['progress']['allow'] === false) {
             return [
                 CURLOPT_NOPROGRESS => true
             ];
         }
 
-        if (!\is_callable($this->request['progress']['callback'])) {
+        if (!\is_callable($this->options['progress']['callback'])) {
             throw new Exception("[Developer][Exception]: The parameter progress.callback must be a valid PHP callback function.");
         }
 
         return [
             CURLOPT_NOPROGRESS          =>  false,
-            CURLOPT_PROGRESSFUNCTION    =>  $this->request['porgress']['callback']
+            CURLOPT_PROGRESSFUNCTION    =>  $this->options['porgress']['callback']
         ];
     }
 
     protected function makeProxyOptions(): array
     {
         $options = [
-            CURLOPT_PROXY           =>  $this->request['proxy']['url'],
-            CURLOPT_HTTPPROXYTUNNEL =>  $this->request['proxy']['tunnel'] ?? false,
+            CURLOPT_PROXY           =>  $this->options['proxy']['url'],
+            CURLOPT_HTTPPROXYTUNNEL =>  $this->options['proxy']['tunnel'] ?? false,
 
-            CURLOPT_PROXYTYPE => match ($this->request['proxy']['type'] ?? 'http') {
+            CURLOPT_PROXYTYPE => match ($this->options['proxy']['type'] ?? 'http') {
                 'http'      =>  CURLPROXY_HTTP,
                 'socks5'    =>  CURLPROXY_SOCKS5,
 
@@ -200,18 +201,18 @@ class Request implements HttpRequest
             }
         ];
 
-        if (!isset($this->request['proxy']['auth'])) {
+        if (!isset($this->options['proxy']['auth'])) {
             return $options;
         }
 
-        $options[CURLOPT_PROXYAUTH] = match ($this->request['proxy']['auth']['type'] ?? 'basic') {
+        $options[CURLOPT_PROXYAUTH] = match ($this->options['proxy']['auth']['type'] ?? 'basic') {
             'basic' =>  CURLAUTH_BASIC,
             'ntlm'  =>  CURLAUTH_NTLM,
 
             default => throw new Exception("[Developer][Exception]: The parameter [proxy.auth.type] has an invalid value. Valid values are: [basic, ntlm]")
         };
 
-        $options[CURLOPT_PROXYUSERPWD] = "{$this->request['proxy']['auth']['username']}:{$this->request['proxy']['auth']['password']}";
+        $options[CURLOPT_PROXYUSERPWD] = "{$this->options['proxy']['auth']['username']}:{$this->options['proxy']['auth']['password']}";
         return $options;
     }
 
@@ -219,7 +220,7 @@ class Request implements HttpRequest
     {
         $contentType = null;
 
-        foreach ($this->request["headers"] as $name => $value) {
+        foreach ($this->options["headers"] as $name => $value) {
             if (\strtolower($name) === "content-type") {
                 $contentType = $value;
             }
@@ -244,29 +245,29 @@ class Request implements HttpRequest
     {
         $body = [];
 
-        foreach ($this->request["body"]["content"] as $field) {
+        foreach ($this->options["body"]["content"] as $field) {
             $body[$field["label"]] = $field["value"];
         }
 
-        return \json_encode(value: $body, depth: $this->request["body"]["options"]["depth"] ?? 1024);
+        return \json_encode(value: $body, depth: $this->options["body"]["options"]["depth"] ?? 1024);
     }
 
     protected function makeUrlEncodedFormContent()
     {
         $body = [];
 
-        foreach ($this->request["body"]["content"] as $field) {
+        foreach ($this->options["body"]["content"] as $field) {
             $body[$field["label"]] = $field["value"];
         }
 
-        return \http_build_query(data: $body, encoding_type: $this->request["body"]["options"]["encoding"] ?? PHP_QUERY_RFC1738);
+        return \http_build_query(data: $body, encoding_type: $this->options["body"]["options"]["encoding"] ?? PHP_QUERY_RFC1738);
     }
 
     protected function makeMultipartFormData()
     {
         $body = [];
 
-        foreach ($this->request["body"]["content"] as $field) {
+        foreach ($this->options["body"]["content"] as $field) {
             if (\is_string($field["value"])) {
                 $body[$field["label"]] = \is_file($field["value"])
                     ? new \CURLFile($field["value"], $field["mime"] ?? null, $field["name"] ?? $field["label"])
