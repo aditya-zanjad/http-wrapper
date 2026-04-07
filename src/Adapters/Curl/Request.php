@@ -36,8 +36,8 @@ class Request implements HttpRequest
             $options[CURLOPT_LOW_SPEED_TIME]    =   $this->options['read_timeout'];
         }
 
-        if (isset($this->requests['query'])) {
-            $options[CURLOPT_URL] .= \http_build_query(
+        if (isset($this->options['query']['params'])) {
+            $options[CURLOPT_URL] .= '?' . \http_build_query(
                 $this->options['query']['params'],
                 $this->options['query']['options']['prefix']    ??  '',
                 $this->options['query']['options']['separator'] ??  null,
@@ -76,12 +76,12 @@ class Request implements HttpRequest
         }
 
         if (isset($this->options["body"]["content"])) {
-            $options += $this->makeBody();
+            $options[CURLOPT_POSTFIELDS] = $this->makeBody();
         }
 
         if (isset($this->options['save_to'])) {
-            $this->options[CURLOPT_FILE]            =   \is_string($this->options['save_to']) ? \fopen($this->options['save_to'], 'w+') : $this->options['save_to'];
-            $this->options[CURLOPT_RETURNTRANSFER]  =   false;
+            $options[CURLOPT_FILE]            =   \is_string($this->options['save_to']) ? \fopen($this->options['save_to'], 'w+') : $this->options['save_to'];
+            $options[CURLOPT_RETURNTRANSFER]  =   false;
         }
 
         return $options;
@@ -230,15 +230,13 @@ class Request implements HttpRequest
             throw new Exception("[Developer][Exception]: The header [Content-Type] is required along with the request payload.");
         }
 
-        return [
-            CURLOPT_POSTFIELDS => match ($contentType) {
-                "application/json"                  =>  $this->makeJsonContent(),
-                "multipart/form-data"               =>  $this->makeMultipartFormData(),
-                "application/x-www-form-urlencoded" =>  $this->makeUrlEncodedFormContent(),
+        return match ($contentType) {
+            "application/json"                  =>  $this->makeJsonContent(),
+            "multipart/form-data"               =>  $this->makeMultipartFormData(),
+            "application/x-www-form-urlencoded" =>  $this->makeUrlEncodedFormContent(),
 
-                default => throw new Exception("[Developer][Exception]: The request payload type [{$contentType}] is either invalid OR not supported by this package yet."),
-            }
-        ];
+            default => throw new Exception("[Developer][Exception]: The request payload type [{$contentType}] is either invalid OR not supported by this package yet."),
+        };
     }
 
     protected function makeJsonContent(): string

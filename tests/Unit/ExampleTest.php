@@ -102,6 +102,48 @@ test('Response returns a PDF file', function () use ($url) {
 })->covers(Http::class, Curl::class, Request::class, Response::class);
 
 
+// Send HTTP GET request with query parameters
+test('Request sends query parameter & response returns them', function () use ($url) {
+    $res = Http::adapter('curl')->send([
+        'url'       =>  "{$url}/query_params.php",
+        'method'    =>  'GET',
+        'query'     =>  ['params' => ['a' => 1, 'b' => 2]]
+    ]);
+
+    expect($res->body())->toBeArray()->toBe(['status' => true, 'query' => ['a' => 1, 'b' => 2], 'message' => 'Query params successfully received.']);
+    expect($res->code())->toBeInt()->toBe(200);
+    expect($res->status())->toBeString()->toBe('OK');
+})->covers(Http::class, Curl::class, Request::class, Response::class);
+
+
+// Send HTTP POST request with JSON payload
+test('Request sends JSON request & obtains JSON response', function () use ($url) {
+    $res = Http::adapter('curl')->send([
+        'url'       =>  "{$url}/post_json.php",
+        'method'    =>  'POST',
+        'headers'   =>  ['Content-Type' => 'application/json'],
+
+        'body' => [
+            'content' => [
+                [
+                    'label' => 'username',
+                    'value' => 'aditya_zanjad'
+                ],
+                [
+                    'label' => 'password',
+                    'value' => 'Aditya@123'
+                ]
+            ]
+        ]
+    ]);
+
+    expect($res->body())->toBeArray()->toBe(['message' => 'JSON data is successfully submitted.']);
+    expect($res->code())->toBeInt()->toBe(201);
+    expect($res->status())->toBeString()->toBe('CREATED');
+    expect($res->header('Content-Type'))->toBeString()->toBe('application/json; charset=utf-8');
+})->covers(Http::class, Curl::class, Request::class, Response::class);
+
+
 // Close the HTTP server process.
 $status = \proc_get_status($process);
 
