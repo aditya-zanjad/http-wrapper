@@ -198,6 +198,44 @@ test('Request sends a PUT request & response confirms this request', function ()
 })->covers(Http::class, Curl::class, Request::class, Response::class);
 
 
+// TODO => Fix the form submission in case of 'multipart/form-data'.
+/*
+test('Request sends a PATCH request & response confirms this request', function () use ($url) {
+    $tempFile = fopen('temp_file.txt', 'w');
+    fwrite($tempFile, 'This is a temporary file for testing multipart form data upload.');
+    fclose($tempFile);
+
+    $res = Http::adapter('curl')->send([
+        'url'       =>  "{$url}/patch_multipart.php",
+        'method'    =>  'PATCH',
+        'headers'   =>  ['Content-Type' => 'multipart/form-data'],
+
+        'body' => [
+            'content' => [
+                [
+                    'label' => 'username',
+                    'value' => 'aditya_zanjad'
+                ],
+                [
+                    'label' => 'password',
+                    'value' => 'Aditya@123'
+                ],
+                [
+                    'label' => 'test_file',
+                    'value' => __DIR__ . DIRECTORY_SEPARATOR . 'temp_file.txt'
+                ]
+            ]
+        ]
+    ]);
+
+    expect($res->body())->toBeArray()->toBe(['message' => 'PATCH request received successfully.']);
+    expect($res->code())->toBeInt()->toBe(200);
+    expect($res->status())->toBeString()->toBe('OK');
+
+    unlink('temp_file.txt');
+})->covers(Http::class, Curl::class, Request::class, Response::class);
+*/
+
 test('Request sends multipart form data & response confirms this payload', function () use ($url) {
     $tempFile = fopen('temp_file.txt', 'w');
     fwrite($tempFile, 'This is a temporary file for testing multipart form data upload.');
@@ -218,9 +256,9 @@ test('Request sends multipart form data & response confirms this payload', funct
                     'value' => 'Aditya@123'
                 ],
                 [
-                    'label' => 'file',
                     'name'  =>  'test_file',
-                    'value' => $tempFile
+                    'label' =>  'file',
+                    'value' =>  $tempFile
                 ]
             ]
         ]
