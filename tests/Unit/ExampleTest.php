@@ -144,6 +144,110 @@ test('Request sends JSON request & obtains JSON response', function () use ($url
 })->covers(Http::class, Curl::class, Request::class, Response::class);
 
 
+// Send HTTP POST request with 'application/x-www-form-urlencoded' payload
+test('Request sends form data & response confirms this payload', function () use ($url) {
+    $res = Http::adapter('curl')->send([
+        'url'       =>  "{$url}/post_url_encoded.php",
+        'method'    =>  'POST',
+        'headers'   =>  ['Content-Type' => 'application/x-www-form-urlencoded'],
+
+        'body' => [
+            'content' => [
+                [
+                    'label' => 'username',
+                    'value' => 'aditya_zanjad'
+                ],
+                [
+                    'label' => 'password',
+                    'value' => 'Aditya@123'
+                ]
+            ]
+        ]
+    ]);
+
+    expect($res->body())->toBeArray()->toBe(['message' => 'Form data is successfully submitted.']);
+    expect($res->code())->toBeInt()->toBe(201);
+    expect($res->status())->toBeString()->toBe('CREATED');
+    expect($res->header('Content-Type'))->toBeString()->toBe('application/json; charset=utf-8');
+})->covers(Http::class, Curl::class, Request::class, Response::class);
+
+
+test('Request sends a PUT request & response confirms this request', function () use ($url) {
+    $res = Http::adapter('curl')->send([
+        'url'       =>  "{$url}/put_url_encoded.php",
+        'method'    =>  'PUT',
+        'headers'   =>  ['Content-Type' => 'application/x-www-form-urlencoded'],
+
+        'body' => [
+            'content' => [
+                [
+                    'label' => 'username',
+                    'value' => 'aditya_zanjad'
+                ],
+                [
+                    'label' => 'password',
+                    'value' => 'Aditya@123'
+                ]
+            ]
+        ]
+    ]);
+
+    expect($res->body())->toBeArray()->toBe(['message' => 'PUT request received successfully.']);
+    expect($res->code())->toBeInt()->toBe(200);
+    expect($res->status())->toBeString()->toBe('OK');
+})->covers(Http::class, Curl::class, Request::class, Response::class);
+
+
+test('Request sends multipart form data & response confirms this payload', function () use ($url) {
+    $tempFile = fopen('temp_file.txt', 'w');
+    fwrite($tempFile, 'This is a temporary file for testing multipart form data upload.');
+
+    $res = Http::adapter('curl')->send([
+        'url'       =>  "{$url}/post_multipart.php",
+        'method'    =>  'POST',
+        'headers'   =>  ['Content-Type' => 'multipart/form-data'],
+
+        'body' => [
+            'content' => [
+                [
+                    'label' => 'username',
+                    'value' => 'aditya_zanjad'
+                ],
+                [
+                    'label' => 'password',
+                    'value' => 'Aditya@123'
+                ],
+                [
+                    'label' => 'file',
+                    'name'  =>  'test_file',
+                    'value' => $tempFile
+                ]
+            ]
+        ]
+    ]);
+
+    expect($res->body())->toBeArray()->toBe(['message' => 'Form data with file is successfully submitted.']);
+    expect($res->code())->toBeInt()->toBe(201);
+    expect($res->status())->toBeString()->toBe('CREATED');
+    expect($res->header('Content-Type'))->toBeString()->toBe('application/json; charset=utf-8');
+
+    fclose($tempFile);
+    unlink('temp_file.txt');
+})->covers(Http::class, Curl::class, Request::class, Response::class);
+
+
+test('Request sends a delete request & response returns a 200 OK response', function () use ($url) {
+    $res = Http::adapter('curl')->send([
+        'url'       =>  "{$url}/delete_request.php",
+        'method'    =>  'DELETE'
+    ]);
+
+    expect($res->body())->toBeArray()->toBe(['message' => 'DELETE request received successfully.']);
+    expect($res->code())->toBeInt()->toBe(200);
+    expect($res->status())->toBeString()->toBe('OK');
+})->covers(Http::class, Curl::class, Request::class, Response::class);
+
+
 // Close the HTTP server process.
 $status = \proc_get_status($process);
 
