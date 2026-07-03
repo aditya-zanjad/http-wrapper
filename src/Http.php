@@ -17,8 +17,8 @@ class Http
      * Prevent instantiation to serve only as a factory class.
      * 
      * This class serves as a factory class for two reasons. The first reason is that it serves as a common entry
-     * point for the users of this package. The second reason is that it's suppossed to provide the objects
-     * of the adapter class(es). Therefore, instanting this class just to give out an object of another
+     * point for the users of this package. The second reason is that it's supposed to provide the objects
+     * of the adapter class(es). Therefore, instantiating this class just to give out an object of another
      * class doesn't make any sense.
      * 
      * @throws \Exception => If the user tries to instantiate this class.

@@ -16,19 +16,17 @@ class Curl implements HttpAdapter
     public function __construct(protected array $options = [])
     {
         if (!\extension_loaded('curl')) {
-            throw new Exception("[Developer][Exception]: The PHP extension is not enabled/installed on this sytem. This HTTP Adapter requires it to work. Either enable this extension or switch to a different HTTP adapter.");
+            throw new Exception("[Developer][Exception]: The PHP extension is not enabled/installed on this system. This HTTP Adapter requires it to work. Either enable this extension or switch to a different HTTP adapter.");
         }
     }
 
     public function send(array $request): HttpResponse
     {
-        $request                            =   new Request($request);
-        $options                            =   $request->build();
         $responseHeaders                    =   new ResponseHeaders();
         $options[CURLOPT_HEADERFUNCTION]    =   [$responseHeaders, 'process'];
 
         $req = \curl_init();
-        \curl_setopt_array($req, $options);
+        \curl_setopt_array($req, (new Request($request))->build());
         $res = \curl_exec($req);
 
         return new Response($req, $res, $responseHeaders->all());
