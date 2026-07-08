@@ -9,6 +9,9 @@ use CURLFile;
 use Exception;
 use AdityaZanjad\HttpAdapters\Interfaces\HttpRequest;
 
+/**
+ * @version 1.0
+ */
 class Request implements HttpRequest
 {
     public function __construct(protected array $data)
@@ -41,22 +44,22 @@ class Request implements HttpRequest
         }
 
         if (isset($this->data['body']['content'])) {
-            $options = \array_merge($options, $this->makeBody());
+            $options = \array_replace($options, $this->makeBody());
         }
 
         if (isset($this->data['ssl']['server']['verify'])) {
-            $options = \array_merge($options, $this->makeSslServerVerifyOptions());
+            $options = \array_replace($options, $this->makeSslServerVerifyOptions());
         }
 
         if (isset($this->data['ssl']['client']['certificate'])) {
-            $options = \array_merge($options, $this->makeSslClientVerifyOptions());
+            $options = \array_replace($options, $this->makeSslClientVerifyOptions());
         }
 
         if (isset($this->data['proxy'])) {
-            $options = \array_merge($options, $this->makeProxyOptions());
+            $options = \array_replace($options, $this->makeProxyOptions());
         }
 
-        $options = \array_merge($options, $this->makeProgressCallbackOptions());
+        $options = \array_replace($options, $this->makeProgressCallbackOptions());
 
         if (isset($this->data['read_timeout'])) {
             $options[CURLOPT_LOW_SPEED_LIMIT]   =   1;

@@ -1,5 +1,8 @@
 <?php
 
+use Tests\Helpers\DevServer;
+use Symfony\Component\Console\Output\ConsoleOutput;
+
 /*
 |--------------------------------------------------------------------------
 | Test Case
@@ -11,7 +14,7 @@
 |
 */
 
-pest()->extend(Tests\TestCase::class)->in('Feature');
+pest()->extend(Tests\TestCase::class)->in('Feature', 'Unit');
 
 /*
 |--------------------------------------------------------------------------
@@ -38,8 +41,18 @@ expect()->extend('toBeOne', function () {
 | global functions to help you to reduce the number of lines of code in your test files.
 |
 */
+$dev        =   new DevServer();
+$console    =   new ConsoleOutput();
 
-function something()
-{
-    // ..
-}
+// Start Dev Server
+$dev->startServer();
+$console->writeln("<info>Development Server Started!</info>");
+$console->writeln("<comment>Listening On: {$dev->getBaseUrl()}</comment>");
+
+// Define 
+define('SERVER_BASE_URL', $dev->getBaseUrl());
+
+register_shutdown_function(function () use ($dev, $console) {
+    $dev->stopServer();
+    $console->writeln("<info>Development Server Closed!</info>");
+});

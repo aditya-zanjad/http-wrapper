@@ -20,13 +20,15 @@ class Curl implements HttpAdapter
         }
     }
 
-    public function send(array $request): HttpResponse
+    public function send(array $data): HttpResponse
     {
+        $request                            =   new Request($data);
+        $options                            =   $request->build();
         $responseHeaders                    =   new ResponseHeaders();
         $options[CURLOPT_HEADERFUNCTION]    =   [$responseHeaders, 'process'];
 
         $req = \curl_init();
-        \curl_setopt_array($req, (new Request($request))->build());
+        \curl_setopt_array($req, $options);
         $res = \curl_exec($req);
 
         return new Response($req, $res, $responseHeaders->all());

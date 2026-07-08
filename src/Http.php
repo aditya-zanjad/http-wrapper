@@ -42,7 +42,7 @@ class Http
     {
         return match (\strtolower($adapter)) {
             'curl', 'auto'  =>  new Curl($options),
-            default         =>  throw new Exception("[Developer][Exception]: The HTTP adapter name [{$adapter}] is either unsupported/invalid.")
+            default         =>  throw new Exception("[Developer][Exception]: The HTTP adapter [{$adapter}] is either invalid or not supported yet.")
         };
     }
 }
