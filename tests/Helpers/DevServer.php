@@ -20,11 +20,15 @@ final class DevServer
         $this->serverPath = dirname(__DIR__, 1) . DIRECTORY_SEPARATOR . 'Server' . DIRECTORY_SEPARATOR . 'Paths';
     }
 
-    public function startServer(string $host = '127.0.0.1', string $port = '8000'): void
+    public function startServer(string $host = '127.0.0.1', string $port = '8000', array $vars = []): void
     {
+        if (empty($vars)) {
+            $vars = null;
+        }
+
         for ($i = 0; $i < 10; $i++) {
             $this->baseUrl = "{$host}:{$port}";
-            $this->process = new Process(['php', '-S', $this->baseUrl, '-t', $this->serverPath]);
+            $this->process = new Process(['php', '-S', $this->baseUrl, '-t', $this->serverPath], null, $vars);
             $this->process->setTimeout(5)->start();
 
             if ($this->process->isRunning()) {

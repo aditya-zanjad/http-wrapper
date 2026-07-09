@@ -171,8 +171,8 @@ class Request implements HttpRequest
     {
         return \json_encode(
             value: $this->data['body']['content'], 
-            flags: $this->data['body']['options']['flags'] ?? 0,
-            depth: $this->data['body']['options']['depth'] ?? 512
+            flags: $this->data['body']['flags'] ?? 0,
+            depth: $this->data['body']['depth'] ?? 512
         );
     }
 
@@ -180,9 +180,9 @@ class Request implements HttpRequest
     {
         return \http_build_query(
             data: $this->data['body']['content'],
-            arg_separator: $this->data['body']['options']['separator'] ?? '',
-            encoding_type: $this->data['body']['options']['encoding'] ?? PHP_QUERY_RFC1738,
-            numeric_prefix: $this->data['body']['options']['prefix'] ?? '',
+            arg_separator: $this->data['body']['separator'] ?? null,
+            encoding_type: $this->data['body']['encoding'] ?? PHP_QUERY_RFC1738,
+            numeric_prefix: $this->data['body']['prefix'] ?? '',
         );
     }
 
@@ -219,15 +219,15 @@ class Request implements HttpRequest
 
         return \json_encode(
             value: $field['value'],
-            flags: $field['options']['flags'] ?? 0,
-            depth: $field['options']['depth'] ?? 512
+            flags: $field['flags'] ?? 0,
+            depth: $field['depth'] ?? 512
         );
     }
 
     protected function makeMultipartFieldFromResource(array $field): CURLFile
     {
-        if (\get_resource_type($field['value'])) {
-            throw new Exception("[Developer][Exception]: The request body contains invalid file for the field [{$field['label']}].");
+        if (\get_resource_type($field['value']) !== 'stream') {
+            throw new Exception("[Developer][Exception]: The request body contains invalid file for the field [{$field['name']}].");
         }
 
         $metadata = \stream_get_meta_data($field['value']);
