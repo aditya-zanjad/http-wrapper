@@ -54,16 +54,14 @@ $console->writeln("<comment>Listening On: {$dev->getBaseUrl()}</comment>");
 // Define 
 \define('SERVER_BASE_URL', $dev->getBaseUrl());
 
+// If the directory already exists, attempt to alter its permissions to suit our needs.
+if (\is_dir(SERVER_TEMP_DIRECTORY) && !\chmod(SERVER_TEMP_DIRECTORY, 0755)) {
+    throw new \RuntimeException("[Developer][Exception]: Unable to change the permissions for the directory: [" . SERVER_TEMP_DIRECTORY . "]");
+}
 
-// Create temp directory for testing
-if (!\is_dir(SERVER_TEMP_DIRECTORY)) {
-    $result = \mkdir(SERVER_TEMP_DIRECTORY, 0755, true);
-
-    if ($result === false) {
-        throw new \RuntimeException("[Developer][Exception]: Possibly An Access Permission Issue. Unable to Create/Access The Folder: [" . SERVER_TEMP_DIRECTORY . "]");
-    }
-} else {
-    \chmod(SERVER_TEMP_DIRECTORY, 0755);
+// If the directory does not exist, attempt to create & alter its permissions.
+if (!\is_dir(SERVER_TEMP_DIRECTORY) && !\mkdir(SERVER_TEMP_DIRECTORY, 0755, true)) {
+    throw new \RuntimeException("[Developer][Exception]: Unable to create/access the directory: [" . SERVER_TEMP_DIRECTORY . "]");
 }
 
 register_shutdown_function(function () use ($dev, $console) {
@@ -74,22 +72,16 @@ register_shutdown_function(function () use ($dev, $console) {
     $iterator           =   new \RecursiveIteratorIterator($directoryIterator, RecursiveIteratorIterator::CHILD_FIRST);
 
     foreach ($iterator as $item) {
-        if ($item->isDir()) {
-            \rmdir($item->getPathname());
-        } else {
-            $result = \unlink($item->getPathname());
+        if ($item->isDir() && !\rmdir($item->getPathname())) {
+            throw new Exception("[Developer][Exception]: Failed to remove the directory: [{$item->getPathname()}]");
+        }
 
-            if (!$result) {
-                $path = $item->getPathname();
-                $error = error_get_last();
-                $a = 1;
-            }
+        if ($item->isFile() && !\unlink($item->getPathname())) {
+            throw new Exception("[Developer][Exception]: Failed to delete the file: [{$item->getPathname()}]");
         }
     }
 
-    $result = \rmdir(SERVER_TEMP_DIRECTORY);
-
-    if (!$result) {
-        throw new Exception('1234!');
+    if (!\rmdir(SERVER_TEMP_DIRECTORY)) {
+        throw new Exception("[Developer][Exception]: Failed to delete the directory: [" . SERVER_TEMP_DIRECTORY . "]");
     }
 });

@@ -26,7 +26,7 @@ class Request implements HttpRequest
             CURLOPT_HEADER          =>  false,
             CURLOPT_TIMEOUT         =>  $this->data['timeout'] ?? 30,
             CURLOPT_MAXREDIRS       =>  $this->data['redirects']['max'] ?? 5,
-            CURLOPT_FRESH_CONNECT   =>  $this->data['fresh'] ?? false, 
+            CURLOPT_FRESH_CONNECT   =>  $this->data['fresh'] ?? false,
             CURLOPT_FOLLOWLOCATION  =>  $this->data['redirects']['allow'] ?? true,
             CURLOPT_RETURNTRANSFER  =>  true,
         ];
@@ -44,22 +44,22 @@ class Request implements HttpRequest
         }
 
         if (isset($this->data['body']['content'])) {
-            $options = \array_replace($options, $this->makeBody());
+            $options += $this->makeBody();
         }
 
         if (isset($this->data['ssl']['server']['verify'])) {
-            $options = \array_replace($options, $this->makeSslServerVerifyOptions());
+            $options += $this->makeSslServerVerifyOptions();
         }
 
         if (isset($this->data['ssl']['client']['certificate'])) {
-            $options = \array_replace($options, $this->makeSslClientVerifyOptions());
+            $options += $this->makeSslClientVerifyOptions();
         }
 
         if (isset($this->data['proxy'])) {
-            $options = \array_replace($options, $this->makeProxyOptions());
+            $options += $this->makeProxyOptions();
         }
 
-        $options = \array_replace($options, $this->makeProgressCallbackOptions());
+        $options += $this->makeProgressCallbackOptions();
 
         if (isset($this->data['read_timeout'])) {
             $options[CURLOPT_LOW_SPEED_LIMIT]   =   1;
@@ -75,7 +75,9 @@ class Request implements HttpRequest
         }
 
         if (isset($this->data['ip_resolve'])) {
-            $options[CURLOPT_IPRESOLVE] = $this->data['ip_resolve'] === 'v6' ? CURL_IPRESOLVE_V6 : CURL_IPRESOLVE_V4;
+            $options[CURLOPT_IPRESOLVE] = $this->data['ip_resolve'] === 'v6' 
+                ? CURL_IPRESOLVE_V6 
+                : CURL_IPRESOLVE_V4;
         }
 
         $options[CURLOPT_ENCODING] = $this->makeHeaderForAcceptEncodingField();
@@ -90,12 +92,15 @@ class Request implements HttpRequest
 
     protected function makeQueryParams(): string
     {
-        return \http_build_query(
-            data: $this->data['query']['params'],
-            arg_separator: $this->data['query']['separator'] ?? null,
-            encoding_type: $this->data['query']['encoding'] ?? PHP_QUERY_RFC1738,
-            numeric_prefix: $this->data['query']['prefix'] ?? '',
-        );
+        $prefix     =   $this->data['query']['prefix'] ?? '';
+        $separator  =   $this->data['query']['separator'] ?? null;
+
+        $encoding = match ($this->data['query']['encoding'] ?? null) {
+            '3986'  =>  PHP_QUERY_RFC3986,
+            default =>  PHP_QUERY_RFC1738,
+        };
+
+        return \http_build_query($this->data['query']['params'], $prefix, $separator, $encoding);
     }
 
     protected function makeHeaders(): array
@@ -113,7 +118,7 @@ class Request implements HttpRequest
     {
         $body = [];
 
-        switch ($this->data['body']['type']) {
+        switch ($this->data['body']['type'] ?? null) {
             case 'json':
                 $body[CURLOPT_POSTFIELDS] = $this->makeJsonBody();
                 break;
@@ -134,7 +139,7 @@ class Request implements HttpRequest
                     CURLOPT_INFILESIZE  =>  $file['size']
                 ];
                 break;
-            
+
             default:
                 $body[CURLOPT_POSTFIELDS] = $this->data['body']['content'];
                 break;
@@ -160,7 +165,7 @@ class Request implements HttpRequest
         }
 
         return [
-            'mime'      =>  (new finfo(FILEINFO_MIME_TYPE))->file($metadata['uri']),
+            'mime'      => (new finfo(FILEINFO_MIME_TYPE))->file($metadata['uri']),
             'path'      =>  $metadata['uri'],
             'size'      =>  \filesize($metadata['uri']),
             'handle'    =>  \fopen($body['content'], 'r'),
@@ -169,21 +174,23 @@ class Request implements HttpRequest
 
     protected function makeJsonBody(): string
     {
-        return \json_encode(
-            value: $this->data['body']['content'], 
-            flags: $this->data['body']['flags'] ?? 0,
-            depth: $this->data['body']['depth'] ?? 512
-        );
+        $flags = (int) ($this->data['body']['flags'] ?? 0);
+        $depth = (int) ($this->data['body']['depth'] ?? 512);
+
+        return \json_encode($this->data['body']['content'], $flags, $depth);
     }
 
     protected function makeUrlEncodedFormBody(): string
     {
-        return \http_build_query(
-            data: $this->data['body']['content'],
-            arg_separator: $this->data['body']['separator'] ?? null,
-            encoding_type: $this->data['body']['encoding'] ?? PHP_QUERY_RFC1738,
-            numeric_prefix: $this->data['body']['prefix'] ?? '',
-        );
+        $prefix     =   $this->data['body']['prefix'] ?? '';
+        $separator  =   $this->data['body']['separator'] ?? null;
+
+        $encoding = match ($this->data['body']['encoding'] ?? null) {
+            '3986'  =>  PHP_QUERY_RFC3986,
+            default =>  PHP_QUERY_RFC1738,
+        };
+
+        return \http_build_query($this->data['body']['content'], $prefix, $separator, $encoding);
     }
 
     protected function makeMultipartFormBody(): array
@@ -236,11 +243,7 @@ class Request implements HttpRequest
             throw new Exception("[Developer][Exception]: The request body contains invalid file for the field [{$field['label']}].");
         }
 
-        return new CURLFile(
-            filename: $metadata['uri'],
-            mime_type: $field['mime'] ?? null,
-            posted_filename: $field['filename'] ?? $field['name']
-        );
+        return new CURLFile($metadata['uri'], $field['mime'] ?? null, $field['filename'] ?? $field['name']);
     }
 
     protected function makeMultipartFieldFromString(array $field): string|CURLFile
@@ -271,7 +274,7 @@ class Request implements HttpRequest
     {
         $options                    =   [];
         $options[CURLOPT_SSLCERT]   =   $this->data['ssl']['client']['certificate'];
-            
+
         if (isset($this->data['ssl']['client']['password'])) {
             $options[CURLOPT_SSLCERTPASSWD] = $this->data['ssl']['client']['password'];
         }
@@ -297,7 +300,7 @@ class Request implements HttpRequest
         if (!isset($this->data['ssl']['server']['certificate'])) {
             return $options;
         }
-        
+
         if (\is_file($this->data['ssl']['server']['certificate'])) {
             $options[CURLOPT_CAINFO] = $this->data['ssl']['server']['certificate'];
             return $options;
