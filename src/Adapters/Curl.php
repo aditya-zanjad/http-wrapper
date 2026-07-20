@@ -9,6 +9,7 @@ use AdityaZanjad\HttpAdapters\Adapters\Curl\Request;
 use AdityaZanjad\HttpAdapters\Interfaces\HttpAdapter;
 use AdityaZanjad\HttpAdapters\Adapters\Curl\Response;
 use AdityaZanjad\HttpAdapters\Interfaces\HttpResponse;
+use AdityaZanjad\HttpAdapters\Validators\RequestValidator;
 use AdityaZanjad\HttpAdapters\Adapters\Curl\ResponseHeaders;
 
 class Curl implements HttpAdapter
@@ -22,6 +23,9 @@ class Curl implements HttpAdapter
 
     public function send(array $data): HttpResponse
     {
+        $validator = new RequestValidator($data);
+        $validator->validate();
+
         $request                            =   new Request($data);
         $options                            =   $request->build();
         $responseHeaders                    =   new ResponseHeaders();

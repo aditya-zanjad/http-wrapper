@@ -46,7 +46,7 @@ final class DevServer
             throw new Exception("[Developer][Exception]: Execute the method [startServer()] first before accessing the base url.");
         }
 
-        return $this->baseUrl;
+        return "http://{$this->baseUrl}";
     }
 
     public function stopServer(): void

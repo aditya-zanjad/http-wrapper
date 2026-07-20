@@ -77,7 +77,7 @@ test('HTTP Request Without Any Query Parameters Fails!', function () {
     expect($res->status())->toBeString()->toBe('BAD REQUEST');
     expect($res->headers())->toBeArray();
     expect($res->header('content-type'))->toBeString()->toBe('application/json; charset=utf-8');
-    
+
     $body = $res->body();
 
     expect($body)->toBeArray()->toBe([
@@ -93,10 +93,8 @@ test('HTTP Request With Query Params Succeeds!', function () {
         'url' => SERVER_BASE_URL . '/query_params.php',
 
         'query' => [
-            'params' => [
-                'a' => 1,
-                'b' => 2
-            ]
+            'a' => 1,
+            'b' => 2
         ]
     ]);
 
@@ -146,13 +144,9 @@ test('Sending POST Request With JSON Body Succeeds!', function () {
             'Content-Type'  =>  'application/json'
         ],
 
-        'body' => [
-            'type' => 'json',
-
-            'content' => [
-                'username' => $username,
-                'password' => $password,
-            ]
+        'body.json' => [
+            'username' => $username,
+            'password' => $password,
         ]
     ]);
 
@@ -202,13 +196,9 @@ test('Sending POST request with Form Params Succeeds!', function () {
             'Content-Type'  =>  'application/x-www-form-urlencoded'
         ],
 
-        'body' => [
-            'type' => 'params',
-
-            'content' => [
-                'username'  =>  $username,
-                'password'  =>  $password
-            ]
+        'body.form' => [
+            'username'  =>  $username,
+            'password'  =>  $password
         ]
     ]);
 
@@ -237,18 +227,14 @@ test('Sending HTTP POST Request With Incomplete Multipart Form Data Fails!', fun
             'Content-Type'  =>  'multipart/form-data'
         ],
 
-        'body' => [
-            'type' => 'multipart',
-
-            'content' => [
-                [
-                    'name' => 'username',
-                    'value' => $username,
-                ],
-                [
-                    'name' => 'password',
-                    'value' => $password
-                ]
+        'body.multipart' => [
+            [
+                'name' => 'username',
+                'value' => $username,
+            ],
+            [
+                'name' => 'password',
+                'value' => $password
             ]
         ]
     ]);
@@ -277,29 +263,25 @@ test('Sending HTTP POST Request With Multipart Form Data Succeeds!', function ()
             'Accept' => 'application/json',
         ],
 
-        'body' => [
-            'type' => 'multipart',
-
-            'content' => [
-                [
-                    'name'  =>  'username',
-                    'value' =>  $username,
-                ],
-                [
-                    'name'  =>  'password',
-                    'value' =>  $password
-                ],
-                [
-                    'name'  =>  'text_file_01',
-                    'value' =>  $multipartFile
-                ],
-                [
-                    'name'      =>  'text_file_02',
-                    'type'      =>  'file',
-                    'mime'      =>  'text/plain',
-                    'value'     =>  $file,
-                    'filename'  =>  'Text_File_02.txt'
-                ]
+        'body.multipart' => [
+            [
+                'name'  =>  'username',
+                'value' =>  $username,
+            ],
+            [
+                'name'  =>  'password',
+                'value' =>  $password
+            ],
+            [
+                'name'  =>  'text_file_01',
+                'value' =>  $multipartFile
+            ],
+            [
+                'name'      =>  'text_file_02',
+                'type'      =>  'file',
+                'mime'      =>  'text/plain',
+                'value'     =>  $file,
+                'filename'  =>  'Text_File_02.txt'
             ]
         ]
     ]);
